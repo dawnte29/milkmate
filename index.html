@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>밀크메이트</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0b0f14; --sf:#141b24; --sf2:#1c2733; --sf3:#243141; --bd:#2b3745;
+  --tx:#e9eff6; --mu:#93a5ba; --ac:#4da3ff;
+  --ok:#2ecc8f; --wn:#f5b445; --dn:#ff6b6b;
+  --r:14px; --tap:48px;
+}
+:root[data-theme="light"]{
+  --bg:#eef1f6; --sf:#ffffff; --sf2:#f2f5fa; --sf3:#e4eaf2; --bd:#d5dde8;
+  --tx:#0f1720; --mu:#5b6d84; --ac:#0b72e7;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{margin:0;padding:0;height:100%}
+/* body 에 height:100% 를 주면 sticky 헤더가 화면 한 개 높이까지만 붙어 있다가 밀려난다 */
+body{margin:0;padding:0;min-height:100%}
+body{
+  background:var(--bg);color:var(--tx);
+  font:400 17px/1.45 system-ui,-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  overscroll-behavior-y:none;-webkit-text-size-adjust:100%;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+input,select,textarea{
+  background:var(--sf2);border:1px solid var(--bd);border-radius:10px;
+  padding:11px 12px;width:100%;outline:none;
+}
+input:focus,select,textarea:focus{border-color:var(--ac)}
+textarea{resize:vertical;line-height:1.5}
+
+/* ---------- layout ---------- */
+#top{
+  position:sticky;top:0;z-index:40;background:var(--bg);
+  padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;border-bottom:1px solid var(--bd);
+}
+#main{padding:12px 12px calc(96px + env(safe-area-inset-bottom));max-width:760px;margin:0 auto}
+#tabs{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+  background:var(--sf);border-top:1px solid var(--bd);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#tabs button{
+  flex:1;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:11.5px;color:var(--mu);
+}
+#tabs button .ic{font-size:20px;line-height:1}
+#tabs button.on{color:var(--ac)}
+
+/* ---------- header bits ---------- */
+.hrow{display:flex;align-items:center;gap:8px}
+.htitle{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.hsub{font-size:12.5px;color:var(--mu);margin-top:1px}
+.datenav{display:flex;align-items:center;gap:6px;margin-left:auto;flex:none}
+.datenav button{width:34px;height:34px;border-radius:9px;background:var(--sf2);border:1px solid var(--bd);font-size:15px;flex:none}
+.datenav .today{width:auto;padding:0 11px;white-space:nowrap;font-size:13px;font-weight:700}
+.dpill{min-height:36px;padding:0 13px;border-radius:99px;background:var(--sf2);border:1px solid var(--bd);
+  font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.dpill.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.bar{height:7px;background:var(--sf3);border-radius:99px;overflow:hidden;margin-top:9px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),var(--ok));border-radius:99px;transition:width .25s}
+
+/* ---------- generic ---------- */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.pad{padding:14px}
+.muted{color:var(--mu)}
+.small{font-size:13px}
+.tiny{font-size:11.5px}
+.b{font-weight:700}
+.row{display:flex;align-items:center;gap:8px}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.right{margin-left:auto}
+.sep{height:1px;background:var(--bd)}
+.center{text-align:center}
+.mt{margin-top:10px}.mt2{margin-top:18px}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:var(--tap);padding:0 16px;border-radius:12px;
+  background:var(--sf2);border:1px solid var(--bd);font-weight:600;font-size:15px;
+}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#04231a}
+.btn.dn{color:var(--dn);border-color:#5c2b2b}
+.btn.sm{min-height:38px;padding:0 12px;font-size:13.5px;border-radius:10px}
+.btn.xs{min-height:32px;padding:0 10px;font-size:12.5px;border-radius:9px}
+.btn.full{width:100%}
+.btn:active{transform:scale(.97)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;background:var(--sf3);font-size:12px;font-weight:600}
+.pill.ok{background:rgba(46,204,143,.16);color:var(--ok)}
+.pill.wn{background:rgba(245,180,69,.16);color:var(--wn)}
+.pill.dn{background:rgba(255,107,107,.16);color:var(--dn)}
+.empty{padding:44px 20px;text-align:center;color:var(--mu);font-size:15px;line-height:1.7}
+
+/* ---------- today: course ---------- */
+.chead{
+  display:flex;align-items:center;gap:8px;margin:20px 2px 9px;
+}
+.chead:first-child{margin-top:2px}
+.chead .n{font-size:16px;font-weight:800;letter-spacing:-.2px}
+.chead .c{font-size:12px;color:var(--mu);margin-left:auto}
+
+/* ---------- today: line card ---------- */
+.lc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.lc.done{opacity:.5}
+.lc.cur{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
+.lch{display:flex;align-items:center;gap:10px;padding:13px 14px;width:100%;text-align:left}
+.lch .num{
+  flex:none;width:28px;height:28px;border-radius:8px;background:var(--sf3);
+  display:grid;place-items:center;font-size:12.5px;font-weight:800;color:var(--mu)
+}
+.lc.cur .lch .num{background:var(--ac);color:#fff}
+.lch .t{display:block;font-size:17px;font-weight:800;letter-spacing:-.3px}
+.lch .s{display:block;font-size:12px;color:var(--mu);margin-top:2px}
+.lch .cnt{margin-left:auto;font-size:12.5px;color:var(--mu);font-weight:700;flex:none}
+.code{
+  display:flex;align-items:center;gap:10px;margin:0 14px 12px;padding:11px 13px;
+  background:var(--sf2);border:1px dashed var(--bd);border-radius:11px;width:calc(100% - 28px);text-align:left;
+}
+.code .k{font-size:12px;color:var(--mu);flex:none}
+.code .v{
+  font:800 26px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:3px;color:var(--wn);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis
+}
+.code .z{font-size:11px;color:var(--mu);flex:none}
+
+/* ---------- unit rows ---------- */
+.u{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-top:1px solid var(--bd)}
+.u.skip{opacity:.42}
+.u.on{background:rgba(46,204,143,.07)}
+.uck{
+  flex:none;width:34px;height:34px;border-radius:9px;border:2px solid var(--bd);
+  display:grid;place-items:center;font-size:17px;color:transparent;background:var(--sf2);margin-top:1px;
+}
+.u.on .uck{background:var(--ok);border-color:var(--ok);color:#04231a}
+.uno{font-size:19px;font-weight:800;letter-spacing:-.4px;flex:none;min-width:62px}
+.u.on .uno,.u.skip .uno{text-decoration:line-through;text-decoration-thickness:2px}
+.items{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.it{
+  display:inline-flex;align-items:center;gap:0;border-radius:9px;overflow:hidden;
+  border:1px solid var(--bd);background:var(--sf2);
+}
+.it .nm{padding:5px 8px;font-size:14px;font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it .q{padding:5px 9px;font-size:15px;font-weight:800;background:var(--sf3);min-width:30px;text-align:center}
+.it.adj .q{background:var(--wn);color:#2a1c00}
+.it .dot{width:9px;align-self:stretch;flex:none}
+.uwho{font-size:13.5px;color:var(--mu);font-weight:600;flex:none}
+.ucode{
+  display:inline-flex;align-items:center;gap:7px;margin-top:6px;padding:5px 11px;
+  background:rgba(245,180,69,.13);border:1px solid rgba(245,180,69,.32);border-radius:9px;
+  font:800 17px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:1.5px;color:var(--wn);
+}
+.umemo{font-size:12.5px;color:var(--wn);margin-top:5px;opacity:.85}
+.uact{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+/* ---------- manage ---------- */
+.li{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--bd);width:100%;text-align:left}
+.li:first-child{border-top:0}
+.li .t{font-size:16px;font-weight:700}
+.li .s{font-size:12px;color:var(--mu);margin-top:2px}
+/* 목록 요약 줄은 길어도 한 줄 유지 (자세한 건 눌러서 확인) */
+.li .t,.li .s,.li .tiny{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lch .t,.lch .s,.chead .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ord{display:flex;flex-direction:column;gap:3px;flex:none}
+.ord button{width:32px;height:22px;border-radius:6px;background:var(--sf3);font-size:11px;display:grid;place-items:center}
+.crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--mu);margin-bottom:12px}
+.crumb b{color:var(--tx)}
+
+/* ---------- products ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.pc{background:var(--sf);border:1px solid var(--bd);border-radius:12px;overflow:hidden;text-align:left}
+.pc .im{aspect-ratio:1;background:var(--sf3);display:grid;place-items:center;overflow:hidden}
+.pc .im img{width:100%;height:100%;object-fit:cover;display:block}
+.pc .im .ph{font-size:30px;opacity:.35}
+.pc .nm{display:block;padding:8px 9px;font-size:13.5px;font-weight:700;line-height:1.3}
+.pc .nm .mk{display:block;font-size:11px;font-weight:600;color:var(--mu);margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- modal ---------- */
+.ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);display:flex;flex-direction:column;justify-content:flex-end}
+.sheet{
+  background:var(--sf);border-radius:20px 20px 0 0;max-height:92vh;overflow:auto;
+  padding:8px 16px calc(20px + env(safe-area-inset-bottom));
+  animation:up .18s ease-out;max-width:760px;width:100%;margin:0 auto;
+}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.grab{width:38px;height:4px;background:var(--bd);border-radius:99px;margin:6px auto 12px}
+.sh{font-size:18px;font-weight:800;margin:0 0 14px}
+.lb{font-size:12.5px;color:var(--mu);font-weight:700;margin:14px 0 6px}
+.lb:first-of-type{margin-top:4px}
+.pv{position:fixed;inset:0;z-index:110;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+.pv img{max-width:100%;max-height:72vh;border-radius:14px;object-fit:contain}
+.pv .cap{font-size:22px;font-weight:800;color:#fff;text-align:center}
+.bigcode{position:fixed;inset:0;z-index:110;background:#000;display:grid;place-items:center;padding:20px;text-align:center}
+.bigcode .v{font:900 clamp(46px,17vw,110px)/1.1 ui-monospace,Consolas,monospace;letter-spacing:6px;color:#ffd479;word-break:break-all}
+.bigcode .k{color:#8fa1b6;font-size:16px;margin-bottom:14px}
+
+/* ---------- misc ---------- */
+.dchk{display:flex;gap:6px;flex-wrap:wrap}
+.dchk button{width:42px;height:42px;border-radius:11px;background:var(--sf2);border:1px solid var(--bd);font-weight:700;font-size:15px}
+.dchk button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.adjit{border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-top:10px;background:var(--sf2)}
+.stp{display:flex;align-items:center;gap:0;border:1px solid var(--bd);border-radius:10px;overflow:hidden;flex:none}
+.stp button{width:40px;height:40px;background:var(--sf2);font-size:19px;font-weight:700;display:grid;place-items:center}
+.stp .v{min-width:38px;text-align:center;font-weight:800;font-size:16px}
+.sumrow{display:flex;align-items:center;gap:11px;padding:11px 14px;border-top:1px solid var(--bd)}
+.sumrow:first-child{border-top:0}
+.sumrow .th{width:46px;height:46px;border-radius:10px;background:var(--sf3);flex:none;display:grid;place-items:center;overflow:hidden}
+.sumrow .th img{width:100%;height:100%;object-fit:cover}
+.sumrow .q{margin-left:auto;font-size:23px;font-weight:900;letter-spacing:-.5px;flex:none;white-space:nowrap}
+.sumrow .q .of{font-size:14px;font-weight:700;color:var(--mu)}
+.sumrow .q .strike{text-decoration:line-through;text-decoration-thickness:3px}
+.sumrow .q .ck{color:var(--ok);font-size:18px;margin-left:5px}
+.sumrow.fin{opacity:.45}
+.sumrow.fin .b{text-decoration:line-through;text-decoration-thickness:2px}
+.fab{
+  position:fixed;right:14px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:45;
+  height:46px;padding:0 18px;border-radius:99px;background:var(--ac);color:#fff;font-weight:800;font-size:14.5px;
+  box-shadow:0 6px 22px rgba(0,0,0,.45);display:inline-flex;align-items:center;gap:7px;
+}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom));
+  z-index:200;background:#000d;color:#fff;padding:11px 18px;border-radius:99px;font-size:14px;font-weight:600;
+  border:1px solid #ffffff22;
+  /* 알약 모양이 깨지지 않게 항상 한 줄 */
+  white-space:nowrap;text-align:center;
+  max-width:calc(100vw - 24px);overflow:hidden;text-overflow:ellipsis;
+}
+code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
+</style>
+</head>
+<body>
+
+<header id="top"></header>
+<main id="main"></main>
+<nav id="tabs">
+  <button data-act="tab" data-v="today" class="on"><span class="ic">🚚</span>오늘 배달</button>
+  <button data-act="tab" data-v="load"><span class="ic">📦</span>적재 수량</button>
+  <button data-act="tab" data-v="manage"><span class="ic">🏢</span>명단 관리</button>
+  <button data-act="tab" data-v="prod"><span class="ic">🥛</span>우유 품목</button>
+  <button data-act="tab" data-v="set"><span class="ic">⚙️</span>설정</button>
+</nav>
+<div id="modal"></div>
+
+<script>
+"use strict";
+/* =========================================================
+   우유 배달 동선 앱 — 데이터
+   구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
+   ========================================================= */
+const KEY='milk_v1';
+const VER='v27 · 2026-08-21';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const DOW=['일','월','화','수','목','금','토'];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+function blank(){
+  return {v:1,
+    courses:[],blocks:[],lines:[],units:[],products:[],
+    daily:{},
+    order:{},
+    set:{theme:'dark',days:[1,3,5],floorDesc:true,seen:false}
+  };
+}
+let S=blank();
+try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.v){S=Object.assign(blank(),r);S.set=Object.assign(blank().set,r.set||{});
+  /* 예전 버전의 품목 '메모' 를 '제조사' 로 옮긴다 */
+  S.products.forEach(p=>{if(p.maker==null&&p.memo!=null){p.maker=p.memo;delete p.memo}});}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}};
+
+/* ---------- 사진 저장 ----------
+   1순위 IndexedDB, 막히면 localStorage 로 자동 전환.
+   저장 형식은 data URL 문자열 — blob: 주소가 막히는 환경에서도 화면에 뜬다.
+   IndexedDB 가 응답 없이 멈추는 경우가 있어 4초 제한을 둔다. */
+const PIC={};                       // productId -> data URL
+const LSPIC='milk_pic_';
+let _db=null,_idbBad='',PICSTORE='?';
+function idb(){
+  if(_db)return Promise.resolve(_db);
+  if(_idbBad)return Promise.reject(new Error(_idbBad));
+  return new Promise((res,rej)=>{
+    let done=false;
+    const fail=m=>{if(done)return;done=true;_idbBad=m;rej(new Error(m))};
+    let r;
+    try{r=indexedDB.open('milkphoto',1)}catch(e){return fail('IndexedDB 차단됨')}
+    if(!r)return fail('IndexedDB 없음');
+    setTimeout(()=>fail('IndexedDB 응답 없음'),4000);
+    r.onupgradeneeded=()=>{try{const d=r.result;if(!d.objectStoreNames.contains('p'))d.createObjectStore('p')}catch(e){}};
+    r.onsuccess=()=>{if(!done){done=true;_db=r.result;res(_db)}};
+    r.onerror=()=>fail('IndexedDB 열기 실패');
+    r.onblocked=()=>fail('IndexedDB 잠김');
+  });
+}
+const asDataURL=v=>typeof v==='string'?Promise.resolve(v):blob2b64(v);
+
+async function photoPut(id,blob){
+  const d=await asDataURL(blob);
+  try{
+    const db=await idb();
+    await new Promise((res,rej)=>{
+      const t=db.transaction('p','readwrite');t.objectStore('p').put(d,id);
+      t.oncomplete=res;t.onerror=()=>rej(t.error||new Error('쓰기 실패'));t.onabort=()=>rej(t.error||new Error('쓰기 중단'));
+    });
+    try{localStorage.removeItem(LSPIC+id)}catch(e){}
+    PICSTORE='IndexedDB';
+  }catch(e){
+    localStorage.setItem(LSPIC+id,d);          // 용량이 넘치면 예외가 그대로 올라감
+    PICSTORE='localStorage';
+  }
+  PIC[id]=d;
+  return d;
+}
+async function photoDel(id){
+  try{const db=await idb();await new Promise(res=>{const t=db.transaction('p','readwrite');t.objectStore('p').delete(id);t.oncomplete=res;t.onerror=res})}catch(e){}
+  try{localStorage.removeItem(LSPIC+id)}catch(e){}
+  delete PIC[id];
+}
+async function photoAll(){
+  const out={};
+  try{
+    const db=await idb();
+    const got=await new Promise(res=>{
+      const t=db.transaction('p','readonly'),o=t.objectStore('p'),m={};
+      const kq=o.getAllKeys(),vq=o.getAll();
+      t.oncomplete=()=>{(kq.result||[]).forEach((k,i)=>m[k]=vq.result[i]);res(m)};
+      t.onerror=()=>res(m);
+      t.onabort=()=>res(m);
+      setTimeout(()=>res(m),5000);                 // 응답이 없어도 앱이 멈추지 않게
+    });
+    for(const k in got)out[k]=got[k];
+    if(Object.keys(got).length)PICSTORE='IndexedDB';
+  }catch(e){}
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.indexOf(LSPIC)===0){
+        const id=k.slice(LSPIC.length);
+        if(!out[id]){out[id]=localStorage.getItem(k);PICSTORE='localStorage'}
+      }
+    }
+  }catch(e){}
+  return out;
+}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('시간 초과')),ms))]);
+async function loadPics(){
+  for(const k in PIC)delete PIC[k];
+  let all={};
+  try{all=await withTimeout(photoAll(),8000)}catch(e){return}
+  /* 사진 한 장이 말썽이어도 나머지는 계속 불러온다 */
+  for(const k in all){try{PIC[k]=await withTimeout(asDataURL(all[k]),4000)}catch(e){}}
+}
+/* 폰 사진(4000x3000 등)을 작게 줄여서 blob 으로.
+   예전엔 readAsDataURL 로 통째로 문자열을 만들었는데 폰에서 메모리가 터져 실패했음.
+   createImageBitmap → objectURL 순으로 시도해서 큰 사진도 견디게 함. */
+async function fileToBlob(file,max=1000,q=.82){
+  let src=null,bmp=null,url=null;
+  try{
+    if(window.createImageBitmap){
+      try{bmp=await createImageBitmap(file);src=bmp}catch(e){}
+    }
+    if(!src){
+      url=URL.createObjectURL(file);
+      src=await new Promise((res,rej)=>{
+        const i=new Image();
+        i.onload=()=>res(i);
+        i.onerror=()=>rej(new Error('이 형식의 사진은 못 읽어요'));
+        i.src=url;
+      });
+    }
+    const w=src.width||src.naturalWidth,h=src.height||src.naturalHeight;
+    if(!w||!h)throw new Error('사진 크기를 알 수 없어요');
+    const sc=Math.min(1,max/Math.max(w,h));
+    const cw=Math.max(1,Math.round(w*sc)),ch=Math.max(1,Math.round(h*sc));
+    const c=document.createElement('canvas');c.width=cw;c.height=ch;
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cw,ch);x.drawImage(src,0,0,cw,ch);
+    const out=await new Promise(r=>c.toBlob(r,'image/jpeg',q));
+    if(!out)throw new Error('사진을 줄이지 못했어요');
+    return out;
+  }finally{
+    if(bmp&&bmp.close)bmp.close();
+    if(url)URL.revokeObjectURL(url);
+  }
+}
+/* 사진 저장 — 줄이기에 실패하면 원본이라도 저장한다. 성공하면 '' , 실패하면 사유를 돌려줌 */
+async function savePhoto(id,file){
+  let blob=null;
+  try{blob=await fileToBlob(file)}
+  catch(err){
+    if(/^image\/(jpeg|png|webp|gif)$/i.test(file.type||'')&&file.size<=5*1024*1024)blob=file;   // 원본 그대로
+    else return (err&&err.message)||'사진을 읽지 못했어요';
+  }
+  try{await photoPut(id,blob);await loadPics();return ''}
+  catch(err){return '저장 공간에 못 넣었어요'}
+}
+
+/* =========================================================
+   조회 헬퍼
+   ========================================================= */
+/* 배달 순서는 요일마다 따로 저장한다.
+   S.order = { 1:{id:순번,…}, 3:{…}, 5:{…} }  — 그 요일에 저장된 게 없으면 기본 sort 를 씀.
+   OW = 지금 어떤 요일 기준으로 정렬할지 (null 이면 기본 순서) */
+let OW=null;
+const ordOf=x=>{
+  const m=(OW!=null&&S.order)?S.order[OW]:null;
+  return (m&&m[x.id]!=null)?m[x.id]:(x.sort??0);
+};
+const byS=(a,b)=>ordOf(a)-ordOf(b);
+/* 이 요일에 배달하는 세대만 걸러내기 (명단 관리 요일 필터) */
+const mFilter=us=>MST.day==null?us:us.filter(u=>onDay(u,MST.day));
+/* 여러 요일 순서에서 특정 세대·라인들을 지워 기본 순서를 따르게 함 */
+function clearOrder(ids){
+  if(!S.order)return;
+  for(const w in S.order)ids.forEach(id=>delete S.order[w][id]);
+}
+const courses=()=>S.courses.slice().sort(byS);
+const blocksOf=c=>S.blocks.filter(b=>b.cid===c).sort(byS);
+const linesOf=b=>S.lines.filter(l=>l.bid===b).sort(byS);
+const unitsOf=l=>S.units.filter(u=>u.lid===l).sort(byS);
+const P=id=>S.products.find(p=>p.id===id);
+const pname=id=>{const p=P(id);return p?p.name:'?'};
+const F=(id,arr)=>arr.find(x=>x.id===id);
+
+function dkey(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+function parseD(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+let DATE=dkey(new Date());
+function day(k=DATE){
+  if(!S.daily[k])S.daily[k]={done:{},skip:{},adj:{},extra:[]};
+  const d=S.daily[k];d.done=d.done||{};d.skip=d.skip||{};d.adj=d.adj||{};d.extra=d.extra||[];
+  return d;
+}
+const dow=()=>parseD(DATE).getDay();
+
+/* 오늘 이 세대가 배달 대상인가 */
+function onDay(u,w=dow()){const ds=u.days&&u.days.length?u.days:S.set.days;return ds.includes(w)}
+
+/* 이 품목의 오늘 수량 — dq(요일별 수량)가 있으면 그걸 씀 */
+const qtyOf=(i,w)=>(i.dq&&i.dq[w]!=null)?i.dq[w]:(i.qty||0);
+/* 오늘 실제 수량 (고정 + 당일 조정) */
+function eff(u,d=day(),w=dow()){
+  const m=new Map();
+  (u.items||[]).forEach(i=>{
+    if(i.d&&i.d.length&&!i.d.includes(w))return;   // 이 품목만 다른 요일이면 건너뜀
+    m.set(i.pid,(m.get(i.pid)||0)+qtyOf(i,w));
+  });
+  const a=d.adj[u.id]||{};
+  for(const pid in a)m.set(pid,(m.get(pid)||0)+a[pid]);
+  return [...m].filter(([,q])=>q>0).map(([pid,qty])=>({pid,qty,adj:!!(a[pid])}));
+}
+
+/* 오늘의 전체 배달 트리 */
+function plan(){
+  const d=day(),w=dow(),out=[];
+  OW=w;                       // 오늘 요일의 순서로 정렬
+  for(const c of courses()){
+    const cl=[];
+    for(const b of blocksOf(c.id))for(const l of linesOf(b.id)){
+      let us=unitsOf(l.id).filter(u=>onDay(u,w));
+      const ex=d.extra.filter(e=>e.lid===l.id).map(e=>({...e,temp:true}));
+      us=us.concat(ex);
+      if(!us.length)continue;
+      const live=us.filter(u=>!d.skip[u.id]);
+      cl.push({line:l,block:b,units:us,total:live.length,done:live.filter(u=>d.done[u.id]).length});
+    }
+    if(cl.length)out.push({course:c,lines:cl});
+  }
+  return out;
+}
+function stats(pl){
+  let t=0,dn=0;pl.forEach(c=>c.lines.forEach(l=>{t+=l.total;dn+=l.done}));return{t,dn};
+}
+
+/* =========================================================
+   렌더
+   ========================================================= */
+let VIEW='today';
+let MST={cid:null,bid:null,lid:null,day:null}; // 명단관리 위치
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function render(){
+  document.documentElement.dataset.theme=S.set.theme;
+  const V={today:vToday,load:vLoad,manage:vManage,prod:vProd,set:vSet}[VIEW];
+  const r=V();
+  $('#top').innerHTML=r.top;
+  $('#main').innerHTML=r.body;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW));
+  const old=document.querySelector('.fab');if(old)old.remove();
+  if(r.fab){const f=document.createElement('button');f.className='fab';f.innerHTML=r.fab.h;f.dataset.act=r.fab.a;document.body.appendChild(f)}
+}
+
+/* ---------- 공통 헤더 ---------- */
+function topBase(title,sub,extra=''){
+  return `<div class="hrow"><div class="grow"><div class="htitle">${title}</div>${sub?`<div class="hsub">${sub}</div>`:''}</div>${extra}</div>`;
+}
+
+/* ================= 오늘 배달 ================= */
+function vToday(){
+  const pl=plan(),st=stats(pl),d=day();
+  const dt=parseD(DATE),isT=DATE===dkey(new Date());
+  const pct=st.t?Math.round(st.dn/st.t*100):0;
+  const top=topBase(
+    `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DOW[dt.getDay()]})`,
+    st.t?`${st.dn} / ${st.t} 세대 · ${pct}% 완료`:'오늘 배달할 세대가 없어요',
+    `<div class="datenav">
+       <button data-act="dmove" data-n="-1">‹</button>
+       ${isT?'':'<button data-act="dtoday" class="today" style="color:var(--wn)">오늘</button>'}
+       <button data-act="dmove" data-n="1">›</button>
+     </div>`)
+    +`<div class="bar"><i style="width:${pct}%"></i></div>`;
+
+  if(!S.courses.length) return {top,body:onboard()};
+  if(!pl.length) return {top,body:`<div class="card"><div class="empty">${DOW[dt.getDay()]}요일에 배달할 세대가 없어요.<br><span class="small">기본 배달 요일은 <b>설정</b>에서 바꿀 수 있어요.</span></div></div>`};
+
+  let firstOpen=true,idx=0,body='';
+  const OPEN=window.__open||(window.__open=new Set());
+  for(const c of pl){
+    const ct=c.lines.reduce((a,l)=>a+l.total,0),cd=c.lines.reduce((a,l)=>a+l.done,0);
+    body+=`<div class="chead"><span class="n">📍 ${esc(c.course.name)}</span><span class="c">${cd}/${ct} 세대</span></div>`;
+    for(const L of c.lines){
+      idx++;
+      const fin=L.total>0&&L.done>=L.total;
+      const cur=!fin&&firstOpen;if(cur)firstOpen=false;
+      const open=!fin||OPEN.has(L.line.id);
+      body+=`<div class="lc ${fin?'done':''} ${cur?'cur':''}" id="L${L.line.id}">
+        <button class="lch" data-act="ltog" data-id="${L.line.id}">
+          <span class="num">${idx}</span>
+          <span class="grow"><span class="t">${esc(L.block.name)} ${esc(L.line.name)}</span>
+          ${L.line.memo?`<span class="s">📝 ${esc(L.line.memo)}</span>`:''}</span>
+          <span class="cnt">${fin?'<span class="pill ok">완료 '+(open?'▲':'▼')+'</span>':L.done+'/'+L.total}</span>
+        </button>`;
+      if(open){
+        if(L.line.code)body+=`<button class="code" data-act="bigcode" data-id="${L.line.id}">
+          <span class="k">공동현관</span><span class="v">${esc(L.line.code)}</span><span class="z">탭 → 확대</span></button>`;
+        for(const u of L.units)body+=uRow(u,d,L.line.id);
+        /* 한 라인에 배달할 집이 2곳 이상일 때만 일괄 완료 버튼을 보여준다 */
+        if(L.total>L.done)body+=`<div class="pad" style="border-top:1px solid var(--bd);display:flex;gap:8px">
+          ${L.total>1?`<button class="btn ok grow" data-act="ldone" data-id="${L.line.id}">라인 배달 완료</button>`:''}
+          <button class="btn sm ${L.total>1?'':'grow'}" data-act="uadd" data-lid="${L.line.id}">＋오늘만 추가</button></div>`;
+      }
+      body+='</div>';
+    }
+  }
+  return {top,body,fab:st.dn<st.t?{h:'📍 배달할 곳',a:'next'}:null};
+}
+
+function uRow(u,d,lid){
+  const on=!!d.done[u.id],sk=!!d.skip[u.id];
+  const its=eff(u,d);
+  return `<div class="u ${on?'on':''} ${sk?'skip':''}">
+    <button class="uck" data-act="utog" data-id="${u.id}" ${sk?'disabled':''}>✓</button>
+    <div class="grow">
+      <div class="row wrap">
+        <span class="uno">${esc(u.name)}</span>
+        ${u.who?`<span class="uwho">${esc(u.who)}</span>`:''}
+        ${u.temp?'<span class="pill wn">오늘만</span>':''}
+        ${sk?'<span class="pill dn">오늘 쉼</span>':''}
+        <button class="btn xs right" data-act="uedit" data-id="${u.id}" data-lid="${lid}">조정</button>
+      </div>
+      ${u.code?`<button class="ucode" data-act="bigcode" data-t="u" data-id="${u.id}">🔑 ${esc(u.code)}</button>`:''}
+      ${its.length?`<div class="items">${its.map(i=>{const p=P(i.pid);return `<button class="it ${i.adj?'adj':''}" data-act="pic" data-id="${i.pid}">
+        <span class="dot" style="background:${p&&p.color?p.color:'var(--ac)'}"></span>
+        <span class="nm">${esc(pname(i.pid))}</span><span class="q">${i.qty}</span></button>`}).join('')}</div>`
+        :'<div class="small muted mt">품목 없음</div>'}
+      ${u.memo?`<div class="umemo">⚠ ${esc(u.memo)}</div>`:''}
+    </div></div>`;
+}
+
+function onboard(){
+  return `<div class="card pad">
+    <div class="b" style="font-size:18px">🥛 시작해볼까?</div>
+    <p class="muted small" style="line-height:1.7">아직 명단이 비어 있어요.</p>
+    <button class="btn pri full mt" data-act="bulk">📋 명단 붙여넣기 (추천)</button>
+    <p class="tiny muted" style="margin:8px 2px 0">아파트명 동-호수 이름 (비번) 품명 수량 순서로 쭉 치면 끝.</p>
+    <button class="btn full mt2" data-act="tab" data-v="manage">🏢 화면에서 하나씩 입력하기</button>
+  </div>`;
+}
+
+/* ================= 적재 수량 ================= */
+function vLoad(){
+  const pl=plan(),d=day(),dt=parseD(DATE);
+  /* 품목별로 [전체수량, 배달완료수량] 을 모은다 */
+  const tot=new Map(),per=[];
+  const add=(m,pid,q,fin)=>{const a=m.get(pid)||[0,0];a[0]+=q;if(fin)a[1]+=q;m.set(pid,a)};
+  for(const c of pl){
+    const m=new Map();
+    for(const L of c.lines)for(const u of L.units){
+      if(d.skip[u.id])continue;
+      const fin=!!d.done[u.id];
+      for(const i of eff(u,d)){add(m,i.pid,i.qty,fin);add(tot,i.pid,i.qty,fin)}
+    }
+    if(m.size)per.push({name:c.course.name,m});
+  }
+  const sum=m=>[...m.values()].reduce((a,b)=>[a[0]+b[0],a[1]+b[1]],[0,0]);
+  const [grand,gdone]=sum(tot);
+  const top=topBase('적재 수량',
+    `${dt.getMonth()+1}/${dt.getDate()} (${DOW[dt.getDay()]}) · 총 ${grand}개`+(gdone?` · <b style="color:var(--ac)">남은 ${grand-gdone}개</b>`:''));
+  if(!tot.size)return{top,body:`<div class="card"><div class="empty">오늘 실을 물건이 없어요.</div></div>`};
+
+  /* 다 배달한 품목은 취소선 + 아래로 내리고, 일부만 했으면 남은 개수를 크게 */
+  const rows=m=>[...m]
+    .sort((a,b)=>{
+      const fa=a[1][0]-a[1][1]<=0?1:0, fb=b[1][0]-b[1][1]<=0?1:0;
+      return fa-fb || b[1][0]-a[1][0];
+    })
+    .map(([pid,[q,dn]])=>{
+      const p=P(pid),rem=q-dn,fin=rem<=0;
+      const qty=fin?`<span class="strike">${q}</span><span class="ck">✓</span>`
+              :dn?`${rem}<span class="of">/${q}</span>`
+              :`${q}`;
+      return `<button class="sumrow ${fin?'fin':''}" style="width:100%;text-align:left" data-act="pic" data-id="${pid}">
+        <span class="th">${PIC[pid]?`<img src="${PIC[pid]}" alt="">`:'<span style="opacity:.4">🥛</span>'}</span>
+        <span class="grow"><span class="b">${esc(pname(pid))}</span>
+        ${p&&p.maker?`<div class="tiny muted">${esc(p.maker)}</div>`:''}</span>
+        <span class="q">${qty}</span></button>`;
+    }).join('');
+
+  let body=`<div class="card"><div class="pad row" style="padding-bottom:4px"><span class="b">전체 합계</span>
+    <span class="right pill ${gdone>=grand?'ok':''}">${gdone?(grand-gdone)+' / ':''}${grand}개</span></div>${rows(tot)}</div>`;
+  if(per.length>1)per.forEach(c=>{
+    const [s,sd]=sum(c.m);
+    body+=`<div class="chead"><span class="n">📍 ${esc(c.name)}</span>
+      <span class="c">${sd?`남은 ${s-sd} / `:''}${s}개</span></div><div class="card">${rows(c.m)}</div>`;
+  });
+  body+=`<p class="tiny muted center mt2">품목을 누르면 사진이 나와요${gdone?' · 다 배달한 품목은 아래로 내려갑니다':''}</p>`;
+  return{top,body};
+}
+
+/* ================= 명단 관리 ================= */
+function vManage(){
+  OW=MST.day;                 // 고른 요일의 순서를 보여주고, 그 요일 순서를 고친다
+  const c=MST.cid&&F(MST.cid,S.courses),b=MST.bid&&F(MST.bid,S.blocks),l=MST.lid&&F(MST.lid,S.lines);
+  if(MST.lid&&!l)MST.lid=null; if(MST.bid&&!b)MST.bid=null; if(MST.cid&&!c)MST.cid=null;
+
+  const top=topBase('명단 관리',
+    !MST.cid?`코스 ${S.courses.length}개 · 세대 ${S.units.length}곳`:
+    MST.lid?'세대(호수)와 품목':MST.bid?'라인 · 공동현관 비밀번호':'아파트 동',
+    `<button class="btn sm right" data-act="bulk">📋 일괄</button>`);
+
+  /* 요일 필터 — 월요일 명단만 보기 등 */
+  const allDays=[...new Set([...S.set.days,...S.units.flatMap(u=>u.days||[])])].sort((a,b)=>a-b);
+  const dayBar=`<div class="row wrap" style="gap:6px;margin-bottom:12px">
+    <button class="dpill ${MST.day==null?'on':''}" data-act="mday" data-d="">전체 ${S.units.length}</button>
+    ${allDays.map(d=>`<button class="dpill ${MST.day===d?'on':''}" data-act="mday" data-d="${d}">${DOW[d]} ${S.units.filter(u=>onDay(u,d)).length}</button>`).join('')}
+  </div>`;
+
+  let crumb='';
+  if(MST.cid){
+    crumb=`<div class="crumb"><button data-act="mgo">전체</button>›<button data-act="mgo" data-c="${c.id}"><b>${esc(c.name)}</b></button>`;
+    if(b)crumb+=`›<button data-act="mgo" data-c="${c.id}" data-b="${b.id}"><b>${esc(b.name)}</b></button>`;
+    if(l)crumb+=`›<b>${esc(l.name)}</b>`;
+    crumb+='</div>';
+  }
+  const mf=mFilter;
+  const hi=t=>`<b style="color:var(--ac)">${t}</b>`;      // 핵심 부분만 파랗게
+  const note=MST.day==null
+    ?`<p class="tiny muted" style="margin:-4px 0 12px">▲▼ 로 바꾼 순서는 ${hi('모든 요일에 공통')}으로 쓰이는 기본 순서예요.</p>`
+    :`<p class="tiny muted" style="margin:-4px 0 12px">▲▼ 로 바꾸면 ${hi(DOW[MST.day]+'요일 순서만')} 바뀌어요. 다른 요일은 그대로입니다.</p>`;
+  let body=dayBar+note+crumb;
+
+  if(!MST.cid){
+    const cs=visCourses();
+    body+=hiddenNote(courses(),cs)+(cs.length?`<div class="card">${cs.map((x,i)=>{
+      const nb=blocksOf(x.id).length,nu=S.blocks.filter(bb=>bb.cid===x.id).reduce((a,bb)=>a+S.lines.filter(ll=>ll.bid===bb.id).reduce((s,ll)=>s+mf(unitsOf(ll.id)).length,0),0);
+      return `<div class="li"><div class="ord">${ordBtns('c',x.id,i,cs.length)}</div>
+        <button class="grow" style="text-align:left" data-act="mgo" data-c="${x.id}"><div class="t">📍 ${esc(x.name)}</div><div class="s">동 ${nb}개 · 세대 ${nu}곳</div></button>
+        <button class="btn xs" data-act="ced" data-id="${x.id}">수정</button></div>`}).join('')}</div>`
+      :`<div class="card"><div class="empty">배달하는 동네(코스)를 먼저 추가해요.<br><span class="small">예: 행복마을, 그린빌</span></div></div>`);
+    body+=`<button class="btn pri full" data-act="ced">＋ 코스(동네) 추가</button>`;
+  } else if(!MST.bid){
+    const bs=visBlocks(c.id);
+    body+=hiddenNote(blocksOf(c.id),bs)+(bs.length?`<div class="card">${bs.map((x,i)=>{
+      const nl=linesOf(x.id).length,nu=linesOf(x.id).reduce((s,ll)=>s+mf(unitsOf(ll.id)).length,0);
+      return `<div class="li"><div class="ord">${ordBtns('b',x.id,i,bs.length)}</div>
+        <button class="grow" style="text-align:left" data-act="mgo" data-c="${c.id}" data-b="${x.id}"><div class="t">🏢 ${esc(x.name)}</div><div class="s">라인 ${nl}개 · 세대 ${nu}곳</div></button>
+        <button class="btn xs" data-act="bed" data-id="${x.id}">수정</button></div>`}).join('')}</div>`
+      :`<div class="card"><div class="empty">아파트 동을 추가해요.<br><span class="small">예: 101동, 102동</span></div></div>`);
+    body+=`<button class="btn pri full" data-act="bed">＋ 동 추가</button>`;
+  } else if(!MST.lid){
+    const ls=visLines(b.id);
+    body+=hiddenNote(linesOf(b.id),ls)+(ls.length?`<div class="card">${ls.map((x,i)=>{
+      const nu=mf(unitsOf(x.id)).length;
+      return `<div class="li"><div class="ord">${ordBtns('l',x.id,i,ls.length)}</div>
+        <button class="grow" style="text-align:left" data-act="mgo" data-c="${c.id}" data-b="${b.id}" data-l="${x.id}">
+          <div class="t">🚪 ${esc(x.name)}</div>
+          <div class="s">${x.code?`🔑 ${esc(x.code)} · `:''}세대 ${nu}곳</div></button>
+        <button class="btn xs" data-act="led" data-id="${x.id}">수정</button></div>`}).join('')}</div>`
+      :`<div class="card"><div class="empty">라인을 추가해요.<br><span class="small">예: 1-2라인, 3-4라인<br>공동현관 비밀번호는 라인마다 따로 저장돼요</span></div></div>`);
+    body+=`<button class="btn pri full" data-act="led">＋ 라인 추가</button>`;
+  } else {
+    const us=mf(unitsOf(l.id));
+    body+=`<div class="card pad">
+      <div class="row"><span class="b">🔑 공동현관</span>
+      <span class="right" style="font:800 22px ui-monospace,Consolas,monospace;letter-spacing:2px;color:var(--wn)">${l.code?esc(l.code):'<span class="muted small" style="font:inherit;font-size:14px;letter-spacing:0">미등록</span>'}</span></div>
+      ${l.memo?`<div class="small muted mt">📝 ${esc(l.memo)}</div>`:''}
+      <button class="btn sm full mt" data-act="led" data-id="${l.id}">라인 정보 수정</button></div>`;
+    body+=us.length?`<div class="card">${us.map((x,i)=>`<div class="li"><div class="ord">${ordBtns('u',x.id,i,us.length)}</div>
+      <button class="grow" style="text-align:left" data-act="ued" data-id="${x.id}">
+        <div class="t">${esc(x.name)}${x.who?` <span class="muted" style="font-weight:400;font-size:13px">${esc(x.who)}</span>`:''}</div>
+        <div class="s">${itemsLine(x)}</div>
+        <div class="tiny muted" style="margin-top:3px">${(x.days&&x.days.length?x.days:S.set.days).map(d=>DOW[d]).join('')}${x.code?' · 🔑 '+esc(x.code):''}${x.memo?' · ⚠ '+esc(x.memo):''}</div>
+      </button></div>`).join('')}</div>`
+      :`<div class="card"><div class="empty">세대(호수)를 추가해요.</div></div>`;
+    body+=`<div class="row"><button class="btn pri grow" data-act="ued">＋ 세대 추가</button>
+      <button class="btn" data-act="autosort" data-l="${l.id}">층순 정렬</button></div>`;
+  }
+  return{top,body};
+}
+/* 품목 한 줄 표시.
+   요일을 골랐으면 그 요일 수량만 (다른 요일 숫자를 같이 보여주면 헷갈림).
+   '전체' 일 때만 기본 수량 + 따로 정해둔 요일을 파랗게 덧붙인다. */
+function itLabel(it){
+  const nm=esc(pname(it.pid));
+  if(MST.day!=null)return nm+' '+qtyOf(it,MST.day);
+  const dq=it.dq?Object.keys(it.dq).sort().map(k=>DOW[k]+it.dq[k]).join(' '):'';
+  const d=it.d&&it.d.length?' ['+it.d.map(x=>DOW[x]).join('')+']':'';
+  return nm+' '+(it.qty||0)+(dq?` <span style="color:var(--ac)">${dq}</span>`:'')+d;
+}
+/* 삭제 버튼 글자 — 요일을 골라놨으면 그 요일에서만 빼는 것임을 분명히.
+   안이 텅 비어 있으면 어느 요일에도 영향이 없으니 그냥 삭제 */
+function delLabel(t,id){
+  if(t&&t!=='u'&&!unitsUnder(t,id).length)return '🗑 빈 '+({c:'코스',b:'동',l:'라인'}[t])+' 삭제';
+  return MST.day==null?'🗑 완전히 삭제 (모든 요일)':`🚫 ${DOW[MST.day]}요일 배달에서 빼기`;
+}
+/* 요일을 골랐으면 그날 배달이 없는 코스·동·라인은 목록에서 숨긴다 */
+const shown=(t,id)=>MST.day==null||unitsUnder(t,id).some(u=>onDay(u,MST.day));
+const visCourses=()=>courses().filter(x=>shown('c',x.id));
+const visBlocks=cid=>blocksOf(cid).filter(x=>shown('b',x.id));
+const visLines=bid=>linesOf(bid).filter(x=>shown('l',x.id));
+const hiddenNote=(all,vis)=>all.length>vis.length
+  ?`<p class="tiny muted" style="margin:-4px 0 10px">${DOW[MST.day]}요일에 배달이 없는 ${all.length-vis.length}개는 숨겼어요. <b>전체</b>를 누르면 다 보여요.</p>`:'';
+/* 코스/동/라인/세대 아래에 딸린 세대들 */
+function unitsUnder(t,id){
+  if(t==='u'){const u=F(id,S.units);return u?[u]:[]}
+  let lids;
+  if(t==='l')lids=[id];
+  else if(t==='b')lids=S.lines.filter(l=>l.bid===id).map(l=>l.id);
+  else{const bs=S.blocks.filter(b=>b.cid===id).map(b=>b.id);lids=S.lines.filter(l=>bs.includes(l.bid)).map(l=>l.id)}
+  return S.units.filter(u=>lids.includes(u.lid));
+}
+/* 세대에서 요일 하나만 뺀다. 남는 요일이 없으면 그 세대는 삭제. 삭제된 개수를 돌려줌 */
+function dropDay(us,w){
+  let gone=0;
+  for(const u of us){
+    const left=(u.days&&u.days.length?u.days:S.set.days).filter(d=>d!==w);
+    if(left.length)u.days=left;
+    else{S.units=S.units.filter(x=>x.id!==u.id);gone++}
+  }
+  return gone;
+}
+/* 세대 한 줄의 품목 요약. 요일을 골랐으면 그날 실제로 나가는 것만 */
+function itemsLine(u){
+  let its=u.items||[];
+  if(MST.day!=null)its=its.filter(i=>(!i.d||!i.d.length||i.d.includes(MST.day))&&qtyOf(i,MST.day)>0);
+  return its.length?its.map(itLabel).join(' · '):'품목 없음';
+}
+function ordBtns(t,id,i,n){
+  return `<button data-act="mv" data-t="${t}" data-id="${id}" data-d="-1" ${i===0?'style="opacity:.25"':''}>▲</button>
+          <button data-act="mv" data-t="${t}" data-id="${id}" data-d="1" ${i===n-1?'style="opacity:.25"':''}>▼</button>`;
+}
+
+/* ================= 품목 ================= */
+let PQ='';                                   // 품목 검색어
+const makers=()=>[...new Set(S.products.map(p=>(p.maker||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+
+function vProd(){
+  const mode=S.set.psort||'name';
+  /* 검색창과 정렬 칩은 sticky 인 #top 에 넣어서 스크롤해도 따라온다 */
+  const top=topBase('우유 품목','',
+      `<div class="row" style="gap:6px;flex:none">
+        <button class="dpill ${mode==='name'?'on':''}" data-act="psort" data-v="name">가나다</button>
+        <button class="dpill ${mode==='maker'?'on':''}" data-act="psort" data-v="maker">제조사</button>
+      </div>`)
+    +`<div class="row" style="gap:8px;margin-top:8px">
+        <input id="pq" class="grow" value="${esc(PQ)}" placeholder="🔍 우유 이름 · 제조사 검색"
+               data-oninput="psearch" autocomplete="off" style="min-height:40px;padding:8px 12px">
+        ${PQ?`<button class="btn sm" data-act="pqclear" style="flex:none">✕</button>`:''}
+      </div>`;
+  return{top,body:`<div id="prodbox">${prodList()}</div>`};
+}
+const pCard=p=>`<button class="pc" data-act="ped" data-id="${p.id}">
+  <span class="im">${PIC[p.id]?`<img src="${PIC[p.id]}" alt="">`:'<span class="ph">🥛</span>'}</span>
+  <span class="nm" style="border-top:3px solid ${p.color||'var(--ac)'}">${esc(p.name)}
+  ${p.maker?`<span class="mk">${esc(p.maker)}</span>`:''}</span></button>`;
+
+function prodList(){
+  const q=norm(PQ),mode=S.set.psort||'name';
+  let ps=S.products.slice();
+  if(q)ps=ps.filter(p=>norm(p.name).includes(q)||norm(p.maker||'').includes(q));
+  const byName=(a,b)=>a.name.localeCompare(b.name,'ko');
+  if(!ps.length)return `<div class="card"><div class="empty">${q
+    ?`'${esc(PQ)}' 로 찾은 품목이 없어요.`
+    :'품목이 없어요.<br><span class="small">명단을 입력하면 품목이 자동으로 만들어져요.<br>여기서 사진만 붙여주면 끝!</span>'}</div></div>`
+    +`<button class="btn pri full mt2" data-act="ped">＋ 품목 직접 추가</button>`;
+
+  let grid;
+  if(mode==='maker'){
+    const g={};
+    ps.forEach(p=>{const k=(p.maker||'').trim()||'제조사 미입력';(g[k]=g[k]||[]).push(p)});
+    grid=Object.keys(g).sort((a,b)=>a==='제조사 미입력'?1:b==='제조사 미입력'?-1:a.localeCompare(b,'ko'))
+      .map(k=>`<div class="chead"><span class="n">🏭 ${esc(k)}</span><span class="c">${g[k].length}개</span></div>
+        <div class="pgrid">${g[k].sort(byName).map(pCard).join('')}</div>`).join('');
+  }else{
+    grid=`<div class="pgrid">${ps.sort(byName).map(pCard).join('')}</div>`;
+  }
+  const noPic=ps.filter(p=>!PIC[p.id]).length;
+  return grid
+    +`<button class="btn pri full mt2" data-act="ped">＋ 품목 직접 추가</button>`
+    +`<p class="tiny muted center mt">${q?`${ps.length}개 찾음 · `:''}${noPic?`사진 없는 품목 ${noPic}개`:'사진 모두 등록됨'}</p>`;
+}
+
+/* ================= 설정 ================= */
+function vSet(){
+  const top=topBase('설정','');
+  const body=`
+  <div class="card pad">
+    <div class="b">기본 배달 요일</div>
+    <p class="tiny muted" style="margin:4px 0 10px">세대별로 따로 정하지 않으면 이 요일에 배달해요.</p>
+    <div class="dchk">${DOW.map((d,i)=>`<button data-act="setday" data-d="${i}" class="${S.set.days.includes(i)?'on':''}">${d}</button>`).join('')}</div>
+  </div>
+  <div class="card pad">
+    <div class="row"><span class="b grow">세대 정렬 순서</span></div>
+    <p class="tiny muted" style="margin:4px 0 10px">'층순 정렬' 눌렀을 때 적용돼요.</p>
+    <div class="row">
+      <button class="btn sm grow ${S.set.floorDesc?'pri':''}" data-act="floor" data-v="1">높은 층 → 낮은 층</button>
+      <button class="btn sm grow ${!S.set.floorDesc?'pri':''}" data-act="floor" data-v="0">낮은 층 → 높은 층</button>
+    </div>
+  </div>
+  <div class="card pad">
+    <div class="b">화면</div>
+    <div class="row mt">
+      <button class="btn sm grow ${S.set.theme==='dark'?'pri':''}" data-act="theme" data-v="dark">🌙 어두운 화면</button>
+      <button class="btn sm grow ${S.set.theme==='light'?'pri':''}" data-act="theme" data-v="light">☀️ 밝은 화면</button>
+    </div>
+    <p class="tiny muted" style="margin-top:8px">새벽에는 어두운 화면이 눈이 덜 부셔요.</p>
+  </div>
+  <div class="card pad">
+    <div class="b">명단 · 백업</div>
+    <button class="btn full mt" data-act="bulk">📋 명단 한번에 붙여넣기</button>
+    <button class="btn full mt" data-act="autoall">🔄 동선 자동 정렬 (동→라인→층)</button>
+    <button class="btn full mt" data-act="relines">🚪 호수 기준으로 라인 다시 배정</button>
+    <button class="btn full mt" data-act="exp">💾 백업 파일 내보내기</button>
+    <button class="btn full mt" data-act="imp">📥 백업 불러오기</button>
+    <p class="tiny muted" style="margin-top:8px">폰을 바꾸거나 앱을 지우면 데이터가 사라져요. 가끔 백업해두세요. (사진도 같이 백업됩니다)</p>
+  </div>
+  <div class="card pad">
+    <div class="b">기록 정리</div>
+    <button class="btn full mt" data-act="clrday">오늘 체크 기록 초기화</button>
+    <button class="btn dn full mt" data-act="wipe">전체 삭제</button>
+  </div>
+  <p class="tiny muted center mt2">밀크메이트 · <b>${VER}</b><br>데이터는 이 폰 안에만 저장됩니다</p>`;
+  return{top,body};
+}
+
+/* =========================================================
+   모달
+   ========================================================= */
+function sheet(html){
+  $('#modal').innerHTML=`<div class="ov" data-act="close"><div class="sheet" data-stop="1"><div class="grab"></div>${html}</div></div>`;
+  document.body.style.overflow='hidden';
+}
+function closeM(){$('#modal').innerHTML='';document.body.style.overflow=''}
+function toast(t){
+  const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);
+  setTimeout(()=>e.remove(),1900);
+}
+const val=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+
+/* ---------- 품목 선택 행 (세대 편집용) ---------- */
+let EDIT_ITEMS=[];
+/* 수량도 요일마다 따로 정할 수 있다.
+   요일 필터가 켜져 있으면 그 요일 수량(it.dq[요일])만, '전체'면 모든 요일 공통 수량(it.qty)을 고친다. */
+const editQty=it=>MST.day==null?(it.qty||0)
+  :((it.dq&&it.dq[MST.day]!=null)?it.dq[MST.day]:(it.qty||0));
+function setEditQty(it,v){
+  if(MST.day==null){it.qty=v;return}
+  it.dq=it.dq||{};it.dq[MST.day]=v;
+}
+const anyQty=i=>(i.qty>0)||(i.dq&&Object.keys(i.dq).some(k=>i.dq[k]>0));
+/* 새 품목 한 줄. 요일을 골라놨으면 그 요일에만 1개 (다른 요일 0) */
+function newItem(pid){
+  const it={pid,qty:0};
+  setEditQty(it,1);
+  return it;
+}
+/* 같은 품목이 두 줄로 생기지 않게 합친다.
+   (요일에서 ✕ 로 뺐던 품목을 다시 추가하면 원래 줄이 되살아나야 함) */
+function mergeDupes(i){
+  const it=EDIT_ITEMS[i];if(!it)return;
+  const dup=EDIT_ITEMS.findIndex((x,k)=>k!==i&&x.pid===it.pid);
+  if(dup<0)return;
+  setEditQty(EDIT_ITEMS[dup],Math.max(editQty(EDIT_ITEMS[dup]),editQty(it)||1));
+  EDIT_ITEMS.splice(i,1);
+}
+
+function itemRows(){
+  const box=document.getElementById('irows');if(!box)return;
+  const opts=S.products.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  /* 요일을 골랐으면 그날 안 나가는(0개) 품목 줄은 숨긴다 — ✕ 를 누르면 줄이 바로 사라지도록 */
+  const rows=EDIT_ITEMS.map((it,i)=>({it,i})).filter(r=>MST.day==null||editQty(r.it)>0);
+  box.innerHTML=rows.map(({it,i})=>{
+    const own=MST.day!=null&&it.dq&&it.dq[MST.day]!=null;   // 이 요일만 따로 정해둔 값
+    const other=it.dq?Object.keys(it.dq).filter(k=>+k!==MST.day).map(k=>DOW[k]+it.dq[k]).join(' '):'';
+    return `<div class="row mt">
+      <select data-act="ichg" data-i="${i}" class="grow">
+        ${opts.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}
+        <option value="__new">＋ 새 품목 만들기…</option>
+      </select>
+      <div class="stp"><button data-act="iq" data-i="${i}" data-d="-1">−</button>
+      <span class="v" ${own?'style="color:var(--ac)"':''}>${editQty(it)}</span>
+      <button data-act="iq" data-i="${i}" data-d="1">＋</button></div>
+      <button class="btn xs dn" data-act="idel" data-i="${i}">✕</button></div>
+      ${own?`<div class="row" style="margin-top:4px"><span class="tiny muted grow">${it.qty>0
+          ?`기본 ${it.qty}개`
+          :`<b style="color:var(--ac)">${DOW[MST.day]}요일에만</b>`}${other?` · 다른 요일 ${esc(other)}`:''}</span>
+        ${it.qty>0?`<button class="btn xs" data-act="iqreset" data-i="${i}">↺ 기본값으로</button>`:''}</div>`
+      :other?`<div class="tiny muted" style="margin-top:4px">다른 요일에 따로 정해둔 값: ${esc(other)}</div>`:''}`;
+  }).join('')||`<p class="small muted mt">${MST.day==null
+    ?'품목이 없어요. 아래에서 추가하세요.'
+    :`${DOW[MST.day]}요일에 나가는 품목이 없어요.`}</p>`;
+}
+
+/* ================= 액션 ================= */
+const A={
+  tab(e){VIEW=e.dataset.v;if(VIEW==='manage')MST={cid:null,bid:null,lid:null,day:MST.day};if(VIEW!=='prod')PQ='';render();window.scrollTo(0,0)},
+  close(){closeM()},
+
+  /* --- 날짜 --- */
+  dmove(e){const d=parseD(DATE);d.setDate(d.getDate()+ +e.dataset.n);DATE=dkey(d);render()},
+  dtoday(){DATE=dkey(new Date());render()},
+
+  /* --- 오늘 배달 --- */
+  utog(e){const d=day(),id=e.dataset.id;d.done[id]?delete d.done[id]:d.done[id]=1;save();render()},
+  ldone(e){
+    const d=day(),l=e.dataset.id,pl=plan();
+    pl.forEach(c=>c.lines.forEach(L=>{if(L.line.id===l)L.units.forEach(u=>{if(!d.skip[u.id])d.done[u.id]=1})}));
+    save();render();toast('라인 완료!');
+  },
+  ltog(e){
+    const O=window.__open||(window.__open=new Set()),id=e.dataset.id;
+    O.has(id)?O.delete(id):O.add(id);render();
+    const el=document.getElementById('L'+id);if(el)el.scrollIntoView({block:'nearest'});
+  },
+  /* 지금 배달해야 할 라인(첫 미완료)으로 데려다준다. 위든 아래든 한 번에 복귀 */
+  next(){
+    const el=document.querySelector('.lc.cur')||document.querySelector('.lc:not(.done)');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },
+  bigcode(e){
+    const isU=e.dataset.t==='u';
+    const o=isU?(S.units.find(x=>x.id===e.dataset.id)||day().extra.find(x=>x.id===e.dataset.id)):F(e.dataset.id,S.lines);
+    if(!o||!o.code)return;
+    const cap=isU?esc(o.name)+(o.who?' '+esc(o.who)+' 님':''):esc(o.name)+' 공동현관';
+    $('#modal').innerHTML=`<div class="bigcode" data-act="close"><div><div class="k">${cap}</div><div class="v">${esc(o.code)}</div>
+      ${o.memo?`<div class="k" style="margin-top:14px;max-width:88vw">${esc(o.memo)}</div>`:''}
+      <div class="k" style="margin-top:18px">화면을 누르면 닫힙니다</div></div></div>`;
+  },
+  pic(e){
+    const p=P(e.dataset.id);if(!p)return;
+    $('#modal').innerHTML=`<div class="pv" data-act="close">
+      ${PIC[p.id]?`<img src="${PIC[p.id]}" alt="">`:`<div style="font-size:84px">🥛</div><div class="small" style="color:#8fa1b6">등록된 사진이 없어요</div>`}
+      <div class="cap">${esc(p.name)}</div>
+      ${p.maker?`<div class="small" style="color:#c9d6e5;text-align:center">🏭 ${esc(p.maker)}</div>`:''}
+      <button class="btn" data-act="picedit" data-id="${p.id}" style="background:#ffffff18;border-color:#ffffff30;color:#fff">${PIC[p.id]?'사진 바꾸기':'📷 사진 등록하기'}</button></div>`;
+  },
+  picedit(e){closeM();A.ped(e)},
+
+  /* --- 오늘만 조정 --- */
+  uedit(e){
+    const id=e.dataset.id,d=day();
+    /* 오늘만 추가한 집은 d.extra 에 있다. plan() 이 붙여주는 temp 표시는 사본에만 있어서
+       여기서는 어디서 찾았는지로 직접 판단해야 한다 (이게 없어서 삭제 버튼이 안 떴음) */
+    let u=S.units.find(x=>x.id===id),isTemp=false;
+    if(!u){u=d.extra.find(x=>x.id===id);isTemp=!!u}
+    if(!u)return;
+    const base=new Map((u.items||[]).map(i=>[i.pid,qtyOf(i,dow())]));   // 요일별 수량 반영
+    // 0으로 줄인 품목도 다시 올릴 수 있게 고정품목 + 조정품목 전부 표시
+    const ids=new Set([...base.keys(),...Object.keys(d.adj[u.id]||{})]);
+    const cur=new Map(eff(u,d).map(i=>[i.pid,i.qty]));
+    const its=[...ids].map(pid=>({pid,qty:cur.get(pid)||0,adj:!!((d.adj[u.id]||{})[pid])}));
+    sheet(`<h3 class="sh">${esc(u.name)} · 오늘만 조정</h3>
+      <p class="tiny muted" style="margin:-8px 0 12px">여기서 바꾼 건 <b>${DATE}</b> 하루만 적용돼요. 고정 명단은 그대로예요.</p>
+      <div id="adjrows">${its.map(i=>`<div class="adjit">
+        <div class="row">
+          <span class="grow"><span class="b">${esc(pname(i.pid))}</span>
+            <span class="tiny muted" style="display:block;font-weight:400">고정 ${base.get(i.pid)||0}개${i.adj?' · <b style="color:var(--wn)">오늘 바뀜</b>':''}</span></span>
+          <div class="stp"><button data-act="aq" data-u="${u.id}" data-p="${i.pid}" data-d="-1">−</button>
+          <span class="v">${i.qty}</span><button data-act="aq" data-u="${u.id}" data-p="${i.pid}" data-d="1">＋</button></div>
+        </div>
+        ${i.qty>0?`<button class="btn xs mt" data-act="apick" data-u="${u.id}" data-p="${i.pid}">↔ 다른 품목으로 교체</button>`:''}
+      </div>`).join('')}</div>
+      <button class="btn full mt" data-act="apick" data-u="${u.id}">＋ 오늘만 품목 추가</button>
+      <div class="sep mt2"></div>
+      <button class="btn full mt2 ${d.skip[u.id]?'pri':'dn'}" data-act="askip" data-u="${u.id}">${d.skip[u.id]?'↩ 오늘 쉼 취소':'🚫 이 집 오늘 쉼'}</button>
+      ${isTemp?`<button class="btn dn full mt" data-act="atemp" data-u="${u.id}">🗑 오늘 추가한 이 집 삭제</button>`:''}
+      <button class="btn full mt" data-act="areset" data-u="${u.id}">조정 되돌리기</button>
+      <button class="btn pri full mt2" data-act="close">닫기</button>`);
+  },
+  aq(e){
+    const d=day(),un=e.dataset.u,p=e.dataset.p,n=+e.dataset.d;
+    const u=S.units.find(x=>x.id===un)||d.extra.find(x=>x.id===un);if(!u)return;
+    const b=(u.items||[]).filter(i=>i.pid===p).reduce((a,i)=>a+qtyOf(i,dow()),0);
+    d.adj[un]=d.adj[un]||{};
+    const nx=(d.adj[un][p]||0)+n;
+    if(b+nx<0)return;                       // 총 수량은 0 미만으로 못 내려감
+    d.adj[un][p]=nx;
+    if(nx===0)delete d.adj[un][p];
+    if(!Object.keys(d.adj[un]).length)delete d.adj[un];
+    save();render();A.uedit({dataset:{id:un}});
+  },
+  /* 품목 고르기. data-p 가 있으면 그 품목을 '교체' 하는 것.
+     예전엔 고르기 전에 미리 0으로 내려버려서, 뒤로 나오면 되돌릴 길이 없었다.
+     이제 실제로 고른 순간에만 바꾼다. */
+  apick(e){
+    const un=e.dataset.u,sp=e.dataset.p||'';
+    window.__pick={u:un,swap:sp};
+    sheet(`<h3 class="sh">${sp?esc(pname(sp))+' → 무엇으로?':'오늘만 품목 추가'}</h3>
+      <p class="tiny muted" style="margin:-8px 0 10px">${sp
+        ?'고르면 <b>수량은 그대로</b> 새 품목으로 바뀝니다.'
+        :'고르면 <b>1개</b>로 들어가요. 수량은 다음 화면에서 ＋−로 맞추면 됩니다.'}
+      목록에 없으면 이름을 치면 <b>새 품목</b>을 바로 만들 수 있어요.</p>
+      <input id="pq" placeholder="🔍 우유 이름 검색 / 새 이름 입력" data-oninput="apickq" autocomplete="off">
+      <div id="plist"></div>
+      <button class="btn full mt2" data-act="uedit" data-id="${un}">← 돌아가기</button>`);
+    A.apickq({value:''});
+  },
+  apickq(el){
+    const box=document.getElementById('plist');if(!box)return;
+    const raw=String(el.value||'').trim(),q=norm(raw);
+    const ps=S.products.filter(p=>!q||norm(p.name).includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    box.innerHTML=
+      (ps.length?`<div class="pgrid mt">${ps.map(p=>`<button class="pc" data-act="apickgo" data-p="${p.id}">
+        <span class="im">${PIC[p.id]?`<img src="${PIC[p.id]}" alt="">`:'<span class="ph">🥛</span>'}</span>
+        <span class="nm" style="border-top:3px solid ${p.color||'var(--ac)'}">${esc(p.name)}</span></button>`).join('')}</div>`
+      :`<p class="small muted center mt2">찾는 품목이 없어요</p>`)
+      +(raw&&!ps.some(p=>norm(p.name)===q)
+        ?`<button class="btn pri full mt2" data-act="apicknew" data-n="${esc(raw)}">＋ '${esc(raw)}' 새 품목으로 만들기</button>`:'');
+  },
+  apickgo(e){addPick(e.dataset.p)},
+  apicknew(e){
+    const n=String(e.dataset.n||'').trim();if(!n)return;
+    const p={id:uid(),name:n,color:hue(n)};S.products.push(p);save();
+    addPick(p.id);toast(`'${n}' 추가했어요`);
+  },
+  askip(e){const d=day(),u=e.dataset.u;d.skip[u]?delete d.skip[u]:(d.skip[u]=1,delete d.done[u]);save();render();closeM()},
+  areset(e){const d=day(),u=e.dataset.u;delete d.adj[u];save();render();closeM();toast('되돌렸어요')},
+  atemp(e){
+    if(!confirm('오늘 추가한 이 집을 삭제할까요?'))return;
+    const d=day(),id=e.dataset.u;
+    d.extra=d.extra.filter(x=>x.id!==id);
+    delete d.done[id];delete d.skip[id];delete d.adj[id];
+    save();closeM();render();toast('삭제했어요');
+  },
+  uadd(e){
+    const lid=e.dataset.lid;
+    sheet(`<h3 class="sh">오늘만 배달할 집 추가</h3>
+      <p class="tiny muted" style="margin:-8px 0 12px">고정 명단에는 안 들어가고 <b>${DATE}</b>에만 나와요.
+      나중에 <b>조정</b>에서 지울 수 있어요.</p>
+      <div class="lb">호수</div><input id="tn" placeholder="예: 1203" inputmode="numeric">
+      <div class="lb">받는 분 (선택)</div><input id="tw" placeholder="예: 김미영">
+      <div class="lb">🔑 현관 비밀번호 (선택)</div><input id="tc" placeholder="예: #1203 5678">
+      <button class="btn pri full mt2" data-act="uadd2" data-lid="${lid}">추가하고 품목 고르기 →</button>`);
+  },
+  uadd2(e){
+    const n=val('tn');if(!n)return toast('호수를 입력해주세요');
+    const d=day(),id=uid();
+    d.extra.push({id,lid:e.dataset.lid,name:/[가-힣a-zA-Z]$/.test(n)?n:n+'호',
+      who:val('tw'),code:val('tc'),memo:'',items:[],sort:9999});
+    save();render();
+    A.apick({dataset:{u:id}});                  // 바로 품목 고르기로 이어짐
+  },
+
+  /* --- 명단 관리 이동 --- */
+  mgo(e){MST={cid:e.dataset.c||null,bid:e.dataset.b||null,lid:e.dataset.l||null,day:MST.day};render();window.scrollTo(0,0)},
+  mday(e){MST.day=e.dataset.d===''?null:+e.dataset.d;render()},
+  mv(e){
+    const t=e.dataset.t,id=e.dataset.id,d=+e.dataset.d;
+    OW=MST.day;                                     // 지금 보고 있는 요일 기준으로 집는다
+    const arr={c:visCourses(),b:visBlocks(MST.cid),l:visLines(MST.bid),u:mFilter(unitsOf(MST.lid))}[t];
+    const i=arr.findIndex(x=>x.id===id),j=i+d;
+    if(i<0||j<0||j>=arr.length)return;
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+    if(MST.day==null){
+      arr.forEach((x,k)=>x.sort=k);                 // 전체 = 모든 요일 공통 기본 순서
+    }else{
+      S.order=S.order||{};
+      const m=S.order[MST.day]=S.order[MST.day]||{};
+      arr.forEach((x,k)=>m[x.id]=k);                // 이 요일에만 저장
+    }
+    save();render();
+  },
+
+  /* --- 코스/동/라인/세대 편집 --- */
+  ced(e){
+    const x=e.dataset.id?F(e.dataset.id,S.courses):null;
+    sheet(`<h3 class="sh">${x?'코스 수정':'코스(동네) 추가'}</h3>
+      <div class="lb">이름</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 행복마을 / 그린빌 3단지">
+      <button class="btn pri full mt2" data-act="ced2" data-id="${x?x.id:''}">저장</button>
+      ${x?`<button class="btn dn full mt" data-act="del" data-t="c" data-id="${x.id}">${delLabel("c",x.id)}</button>`:''}`);
+  },
+  ced2(e){
+    const n=val('f1');if(!n)return toast('이름을 입력해주세요');
+    const id=e.dataset.id;
+    if(id)F(id,S.courses).name=n;else S.courses.push({id:uid(),name:n,sort:S.courses.length});
+    save();closeM();render();
+  },
+  bed(e){
+    const x=e.dataset.id?F(e.dataset.id,S.blocks):null;
+    sheet(`<h3 class="sh">${x?'동 수정':'아파트 동 추가'}</h3>
+      <div class="lb">이름</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 101동">
+      <p class="tiny muted mt">여러 개를 한 번에: <code class="k">101동,102동,103동</code> 처럼 콤마로 구분</p>
+      <button class="btn pri full mt2" data-act="bed2" data-id="${x?x.id:''}">저장</button>
+      ${x?`<button class="btn dn full mt" data-act="del" data-t="b" data-id="${x.id}">${delLabel("b",x.id)}</button>`:''}`);
+  },
+  bed2(e){
+    const n=val('f1');if(!n)return toast('이름을 입력해주세요');
+    const id=e.dataset.id;
+    if(id)F(id,S.blocks).name=n;
+    else n.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>S.blocks.push({id:uid(),cid:MST.cid,name:s,sort:S.blocks.filter(b=>b.cid===MST.cid).length}));
+    save();closeM();render();
+  },
+  led(e){
+    const x=e.dataset.id?F(e.dataset.id,S.lines):null;
+    sheet(`<h3 class="sh">${x?'라인 수정':'라인 추가'}</h3>
+      <div class="lb">라인 이름</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 1-2라인">
+      <div class="lb">🔑 공동현관 비밀번호</div><input id="f2" value="${x?esc(x.code||''):''}" placeholder="예: 1234*">
+      <div class="lb">메모 (선택)</div><input id="f3" value="${x?esc(x.memo||''):''}" placeholder="예: 엘리베이터 오른쪽 / 개 조심">
+      <p class="tiny muted mt">여러 개 한 번에: 이름칸에 <code class="k">1-2라인,3-4라인</code></p>
+      <button class="btn pri full mt2" data-act="led2" data-id="${x?x.id:''}">저장</button>
+      ${x?`<button class="btn dn full mt" data-act="del" data-t="l" data-id="${x.id}">${delLabel("l",x.id)}</button>`:''}`);
+  },
+  led2(e){
+    const n=val('f1');if(!n)return toast('이름을 입력해주세요');
+    const id=e.dataset.id;
+    if(id){const l=F(id,S.lines);l.name=n;l.code=val('f2');l.memo=val('f3')}
+    else n.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>S.lines.push({id:uid(),bid:MST.bid,name:s,code:val('f2'),memo:val('f3'),sort:S.lines.filter(l=>l.bid===MST.bid).length}));
+    save();closeM();render();
+  },
+  ued(e){
+    const x=e.dataset.id?F(e.dataset.id,S.units):null;
+    EDIT_ITEMS=x?(x.items||[]).map(i=>({...i})):[];
+    const days=x&&x.days&&x.days.length?x.days:S.set.days;
+    sheet(`<h3 class="sh">${x?'세대 수정':'세대 추가'}</h3>
+      <div class="lb">호수</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 902" inputmode="numeric">
+      ${x?'':`<p class="tiny muted mt">여러 개 한 번에: <code class="k">902,801,703</code></p>`}
+      <div class="lb">받는 분 (선택)</div><input id="f4" value="${x?esc(x.who||''):''}" placeholder="예: 최복례">
+      <div class="lb">🔑 현관 비밀번호 (선택)</div><input id="f5" value="${x?esc(x.code||''):''}" placeholder="예: #1501 8587">
+      <div class="lb">배달 요일</div>
+      <div class="dchk" id="fdays">${DOW.map((d,i)=>`<button data-act="udy" data-d="${i}" class="${days.includes(i)?'on':''}">${d}</button>`).join('')}</div>
+      <div class="lb">품목</div>
+      <p class="tiny muted" style="margin:-2px 0 0">${MST.day==null
+        ?`수량을 바꾸면 <b style="color:var(--ac)">모든 요일 공통</b> 수량이 바뀌어요. 요일별로 따로 정해둔 곳은 그대로예요.`
+        :`수량을 바꾸면 <b style="color:var(--ac)">${DOW[MST.day]}요일 수량만</b> 바뀌어요. 다른 요일은 그대로입니다.`}</p>
+      <div id="irows"></div>
+      <button class="btn sm full mt" data-act="iadd">＋ ${MST.day==null?"품목 추가":DOW[MST.day]+"요일에만 품목 추가"}</button>
+      <div class="lb">메모 (선택)</div><input id="f3" value="${x?esc(x.memo||''):''}" placeholder="예: 문 앞 상자 안에">
+      <button class="btn pri full mt2" data-act="ued2" data-id="${x?x.id:''}">저장</button>
+      ${x?`<button class="btn dn full mt" data-act="del" data-t="u" data-id="${x.id}">${delLabel("u",x.id)}</button>`:''}`);
+    itemRows();
+  },
+  udy(e){e.classList.toggle('on')},
+  ued2(e){
+    const n=val('f1');if(!n)return toast('호수를 입력해주세요');
+    const days=[...document.querySelectorAll('#fdays button.on')].map(b=>+b.dataset.d);
+    const items=EDIT_ITEMS.filter(i=>i.pid&&anyQty(i));   // 어느 요일에든 수량이 있으면 남긴다
+    const memo=val('f3'),who=val('f4'),code=val('f5'),id=e.dataset.id;
+    const fix=s=>/[가-힣a-zA-Z]$/.test(s)?s:s+'호';
+    if(id){const u=F(id,S.units);u.name=fix(n);u.days=days;u.items=items;u.memo=memo;u.who=who;u.code=code}
+    else n.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>
+      S.units.push({id:uid(),lid:MST.lid,name:fix(s),days,items:items.map(i=>({...i})),memo,who,code,sort:S.units.filter(u=>u.lid===MST.lid).length}));
+    save();closeM();render();
+  },
+  /* 요일을 골라놨으면 그 요일에만 들어가는 품목으로 추가한다 (기본 수량은 0) */
+  iadd(){
+    if(!S.products.length){A.pnew();return}
+    /* 이 요일에 이미 나가는 품목은 건너뛰고 고른다.
+       ✕ 로 뺐던(숨어 있는) 품목이면 그 줄을 되살린다 */
+    const showing=new Set(EDIT_ITEMS.filter(x=>MST.day==null||editQty(x)>0).map(x=>x.pid));
+    const p=S.products.find(x=>!showing.has(x.id))||S.products[0];
+    const i=EDIT_ITEMS.findIndex(x=>x.pid===p.id);
+    if(i>=0)setEditQty(EDIT_ITEMS[i],Math.max(1,editQty(EDIT_ITEMS[i])));
+    else EDIT_ITEMS.push(newItem(p.id));
+    itemRows();
+  },
+  ichg(e){
+    const i=+e.dataset.i;
+    if(e.value==='__new'){A.pnew(i);return}
+    EDIT_ITEMS[i].pid=e.value;
+    mergeDupes(i);
+    itemRows();
+  },
+  iq(e){const it=EDIT_ITEMS[+e.dataset.i];setEditQty(it,Math.max(0,editQty(it)+ +e.dataset.d));itemRows()},
+  iqreset(e){const it=EDIT_ITEMS[+e.dataset.i];if(it.dq){delete it.dq[MST.day];if(!Object.keys(it.dq).length)delete it.dq}itemRows()},
+  /* 요일을 골라놨으면 '이 요일만 0' 으로. 다른 요일에도 없으면 아예 뺀다 */
+  idel(e){
+    const i=+e.dataset.i,it=EDIT_ITEMS[i];
+    if(MST.day==null)EDIT_ITEMS.splice(i,1);
+    else{setEditQty(it,0);if(!anyQty(it))EDIT_ITEMS.splice(i,1)}
+    itemRows();
+  },
+  pnew(idx){
+    const n=prompt('새 우유 품목 이름');
+    if(!n||!n.trim()){itemRows();return}
+    const p={id:uid(),name:n.trim(),color:hue(n)};S.products.push(p);save();
+    if(typeof idx==='number'&&EDIT_ITEMS[idx])EDIT_ITEMS[idx].pid=p.id;else EDIT_ITEMS.push(newItem(p.id));
+    itemRows();
+  },
+  del(e){
+    const t=e.dataset.t,id=e.dataset.id;
+    const names={c:'코스',b:'동',l:'라인',u:'세대'};
+
+    const all=unitsUnder(t,id);
+    /* 안이 텅 빈 코스·동·라인은 어느 요일에도 영향이 없으니 요일 상관없이 바로 삭제 */
+    if(t!=='u'&&!all.length){
+      if(!confirm(`비어 있는 이 ${names[t]}을(를) 삭제할까요?\n\n안에 세대가 하나도 없어서\n다른 요일에도 영향이 없어요.`))return;
+    }
+    /* 요일을 골라놨으면 '삭제' 가 아니라 '그 요일에서만 빼기' 로 동작한다 */
+    else if(MST.day!=null){
+      const w=MST.day;
+      const hit=all.filter(u=>onDay(u,w));
+      if(!hit.length)return toast(`${DOW[w]}요일에 배달하는 집이 없어요`);
+      const what=t==='u'?'이 세대를':`이 ${names[t]} 안의 ${hit.length}곳을`;
+      if(!confirm(`${DOW[w]}요일 배달에서 ${what} 뺄까요?\n\n다른 요일 배달은 그대로 남습니다.`))return;
+      const gone=dropDay(hit,w);
+      save();closeM();render();
+      toast(gone?`${DOW[w]}요일에서 뺐어요 · ${gone}곳 삭제`:`${DOW[w]}요일에서 뺐어요`);
+      return;
+    }
+
+    else if(!confirm(`이 ${names[t]}을(를) 완전히 삭제할까요?\n모든 요일에서 사라집니다.${t!=='u'?'\n안에 있는 내용도 전부 지워져요.':''}`))return;
+    if(t==='c'){
+      const bs=S.blocks.filter(b=>b.cid===id).map(b=>b.id);
+      const ls=S.lines.filter(l=>bs.includes(l.bid)).map(l=>l.id);
+      S.units=S.units.filter(u=>!ls.includes(u.lid));S.lines=S.lines.filter(l=>!bs.includes(l.bid));
+      S.blocks=S.blocks.filter(b=>b.cid!==id);S.courses=S.courses.filter(c=>c.id!==id);MST={cid:null,bid:null,lid:null,day:MST.day};
+    }else if(t==='b'){
+      const ls=S.lines.filter(l=>l.bid===id).map(l=>l.id);
+      S.units=S.units.filter(u=>!ls.includes(u.lid));S.lines=S.lines.filter(l=>l.bid!==id);
+      S.blocks=S.blocks.filter(b=>b.id!==id);MST.bid=null;MST.lid=null;
+    }else if(t==='l'){
+      S.units=S.units.filter(u=>u.lid!==id);S.lines=S.lines.filter(l=>l.id!==id);MST.lid=null;
+    }else S.units=S.units.filter(u=>u.id!==id);
+    save();closeM();render();
+  },
+  autosort(e){
+    OW=null;
+    const us=unitsOf(e.dataset.l);
+    const num=s=>{const m=String(s).match(/\d+/);return m?+m[0]:0};
+    us.sort((a,b)=>S.set.floorDesc?num(b.name)-num(a.name):num(a.name)-num(b.name));
+    us.forEach((u,i)=>u.sort=i);
+    clearOrder(us.map(u=>u.id));        // 요일별로 따로 잡아둔 순서는 지우고 층순을 따르게
+    save();render();toast('층순으로 정렬했어요');
+  },
+
+  /* --- 품목 --- */
+  ped(e){
+    const x=e.dataset.id?P(e.dataset.id):null;
+    sheet(`<h3 class="sh">${x?'품목 수정':'품목 추가'}</h3>
+      ${x?`<div style="text-align:center;margin-bottom:14px">
+        ${PIC[x.id]?`<img src="${PIC[x.id]}" style="max-width:190px;max-height:190px;border-radius:14px;object-fit:cover">`:'<div style="font-size:64px;opacity:.35">🥛</div>'}</div>`:''}
+      <div class="lb">이름</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 서울우유 흰우유 200ml">
+      <div class="lb">🏭 제조사 (선택)</div>
+      <input id="f2" list="makerlist" value="${x?esc(x.maker||''):''}" placeholder="예: 연세우유 / 서울우유 / 매일유업">
+      <datalist id="makerlist">${makers().map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
+      <p class="tiny muted mt">적어두면 <b>제조사</b> 정렬로 같은 회사 우유끼리 모아서 볼 수 있어요.</p>
+      ${x?`<div class="lb">사진</div>
+        <label class="btn full" for="fpic">📷 ${PIC[x.id]?'사진 바꾸기':'사진 고르기 · 촬영'}</label>
+        <input type="file" accept="image/*" id="fpic" data-act="pfile" data-id="${x.id}" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+        <div id="pstat" class="center mt"></div>
+        <p class="tiny muted mt">갤러리에서 고르거나 바로 찍으면 돼요. 자동으로 용량을 줄여서 저장합니다.</p>
+        ${PIC[x.id]?`<button class="btn sm full mt" data-act="pdelpic" data-id="${x.id}">사진 삭제</button>`:''}`:''}
+      <button class="btn pri full mt2" data-act="ped2" data-id="${x?x.id:''}">저장</button>
+      ${x?`<button class="btn dn full mt" data-act="pdel" data-id="${x.id}">품목 삭제</button>`:''}`);
+  },
+  async ped2(e){
+    const n=val('f1');if(!n)return toast('이름을 입력해주세요');
+    const id=e.dataset.id;
+    if(id){const p=P(id);p.name=n;p.maker=val("f2")}
+    else S.products.push({id:uid(),name:n,memo:val('f2'),color:hue(n)});
+    /* 사진을 고르고 바로 저장을 눌렀을 때(자동 저장이 안 걸렸을 때)도 같이 저장 */
+    const inp=document.getElementById('fpic');
+    const f=inp&&inp.files&&inp.files[0];
+    if(f&&id&&!inp.dataset.saved){
+      const st=document.getElementById('pstat');
+      if(st)st.innerHTML='<span class="pill wn">사진 저장 중…</span>';
+      const err=await savePhoto(id,f);
+      if(err){if(st)st.innerHTML=`<span class="pill dn">${esc(err)}</span>`;return toast(err)}
+    }
+    save();closeM();render();toast('저장했어요');
+  },
+  async pfile(e){
+    const f=e.files&&e.files[0];if(!f)return;
+    const id=e.dataset.id;
+    const st=document.getElementById('pstat');
+    if(st)st.innerHTML='<span class="pill wn">사진 처리 중…</span>';
+    const err=await savePhoto(id,f);
+    if(err){if(st)st.innerHTML=`<span class="pill dn">${esc(err)}</span>`;toast(err);return}
+    e.dataset.saved='1';
+    render();A.ped({dataset:{id}});          // 시트를 다시 열어 사진이 바로 보이게
+    toast('사진 저장 완료!');
+  },
+  async pdelpic(e){await photoDel(e.dataset.id);await loadPics();closeM();render()},
+  async pdel(e){
+    const id=e.dataset.id;
+    const n=S.units.filter(u=>(u.items||[]).some(i=>i.pid===id)).length;
+    if(!confirm(n?`이 품목을 쓰는 세대가 ${n}곳 있어요. 그래도 삭제할까요?`:'삭제할까요?'))return;
+    S.products=S.products.filter(p=>p.id!==id);
+    S.units.forEach(u=>u.items=(u.items||[]).filter(i=>i.pid!==id));
+    await photoDel(id);await loadPics();save();closeM();render();
+  },
+
+  /* --- 설정 --- */
+  /* 검색은 목록만 다시 그린다 (전체를 다시 그리면 입력칸 포커스가 날아감) */
+  psearch(el){PQ=el.value;const b=document.getElementById('prodbox');if(b)b.innerHTML=prodList()},
+  pqclear(){PQ='';render();const i=document.getElementById('pq');if(i)i.focus()},
+  psort(e){S.set.psort=e.dataset.v;save();render()},
+  theme(e){S.set.theme=e.dataset.v;save();render()},
+  floor(e){S.set.floorDesc=e.dataset.v==='1';save();render()},
+  relines(){
+    if(!confirm('모든 세대를 호수 끝 두 자리 기준으로\n라인에 다시 배정할까요?\n(직접 옮겨둔 게 있으면 초기화됩니다)'))return;
+    reassignLines();save();render();toast('라인을 다시 배정했어요');
+  },
+  setday(e){
+    const d=+e.dataset.d,i=S.set.days.indexOf(d);
+    i<0?S.set.days.push(d):S.set.days.splice(i,1);S.set.days.sort();save();render();
+  },
+  clrday(){if(!confirm(DATE+' 체크·조정 기록을 지울까요?'))return;delete S.daily[DATE];save();render();toast('초기화했어요')},
+  wipe(){
+    if(!confirm('명단·품목·사진 전부 삭제됩니다. 정말요?'))return;
+    if(!confirm('되돌릴 수 없어요. 진짜 삭제할까요?'))return;
+    localStorage.removeItem(KEY);indexedDB.deleteDatabase('milkphoto');location.reload();
+  },
+  async exp(){
+    const pics={},all=await photoAll();
+    for(const k in all){try{pics[k]=await asDataURL(all[k])}catch(e){}}
+    const data=JSON.stringify({...S,_pics:pics});
+    const name='우유배달_백업_'+dkey(new Date())+'.json';
+    try{
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+      a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+      toast('백업 파일을 저장했어요');
+    }catch(err){}
+    sheet(`<h3 class="sh">백업</h3>
+      <p class="small muted">다운로드가 안 되면 아래 내용을 전부 복사해서 카톡 '나에게 보내기' 등에 저장해두세요.</p>
+      <textarea id="expbox" rows="8" style="font-size:11px;margin-top:10px">${esc(data)}</textarea>
+      <button class="btn pri full mt" data-act="copyexp">📋 전체 복사</button>
+      <button class="btn full mt" data-act="close">닫기</button>`);
+  },
+  copyexp(){
+    const t=document.getElementById('expbox');t.select();
+    try{navigator.clipboard.writeText(t.value);toast('복사했어요')}catch(e){document.execCommand('copy');toast('복사했어요')}
+  },
+  imp(){
+    sheet(`<h3 class="sh">백업 불러오기</h3>
+      <p class="small muted" style="color:var(--dn)">지금 있는 데이터는 전부 덮어씌워집니다.</p>
+      <div class="lb">백업 파일 선택</div>
+      <input type="file" accept=".json,application/json" data-act="impfile">
+      <div class="lb">또는 복사한 내용 붙여넣기</div>
+      <textarea id="impbox" rows="5" placeholder="{...}"></textarea>
+      <button class="btn pri full mt2" data-act="imp2">불러오기</button>`);
+  },
+  impfile(e){
+    const f=e.files&&e.files[0];if(!f)return;
+    const fr=new FileReader();fr.onload=()=>{document.getElementById('impbox').value=fr.result;toast('파일을 읽었어요')};fr.readAsText(f);
+  },
+  async imp2(){
+    let o;try{o=JSON.parse(val('impbox'))}catch(e){return toast('내용이 올바르지 않아요')}
+    if(!o||!o.courses)return toast('백업 파일이 아니에요');
+    const pics=o._pics||{};delete o._pics;
+    S=Object.assign(blank(),o);S.set=Object.assign(blank().set,o.set||{});
+    S.products.forEach(p=>{if(p.maker==null&&p.memo!=null){p.maker=p.memo;delete p.memo}});
+    save();
+    for(const k in pics){try{await photoPut(k,pics[k])}catch(e){}}
+    await loadPics();closeM();render();toast('불러왔어요!');
+  },
+  /* --- 일괄 입력 --- */
+  bulk(){
+    sheet(`<h3 class="sh">📋 명단 붙여넣기</h3>
+      <p class="small muted" style="margin:-4px 0 0">사장님께 받은 명단을 <b>아파트명 동-호수 이름 (비번) 품명 수량</b> 순서로 써주세요.<br>
+      여러 명단을 한꺼번에 붙여넣으면 <b>같은 아파트끼리 자동으로 합쳐집니다.</b></p>
+      <div class="lb">여기에 붙여넣기</div>
+      <textarea id="bulkbox" rows="13" placeholder="망포e편한 101-201 김미영 (#0201 2580) 제주목초120 3
+서천현대 103-1501 이명자 (#1501 8587) 제주착한900 1
+서천현대 106-701 김혜리 (#701#3780) 더밀크750 1"></textarea>
+      <button class="btn pri full mt2" data-act="bulkprev">미리보기 →</button>`);
+    /* 붙여넣기 칸은 항상 비어서 열린다. 이전에 쓴 글은 '← 고치기' 로 돌아올 때만 되살린다 */
+  },
+  bulkprev(){
+    const txt=val('bulkbox');if(!txt)return toast('내용을 붙여넣어주세요');
+    const r=parseBulk(txt);
+    if(!r.courses.length)return toast('명단을 못 읽었어요');
+    const nu=r.courses.reduce((a,c)=>a+c.blocks.reduce((x,b)=>x+b.units.length,0),0);
+    const noCode=[];
+    const dq=it=>it.dq?Object.keys(it.dq).sort().map(k=>DOW[k]+it.dq[k]).join(''):String(it.qty);
+    const h=r.courses.map(c=>{
+      const lines=c.blocks.map(b=>{
+        const byLine={};
+        b.units.forEach(u=>{const k=lineName(hoLine(u.ho));(byLine[k]=byLine[k]||[]).push(u)});
+        return Object.keys(byLine).sort().map(k=>
+          `<div style="margin:9px 0 0 6px"><span class="b">${esc(b.name)} ${esc(k)}</span>
+           ${byLine[k].map(u=>{
+             if(!u.code)noCode.push(b.name+' '+u.name);
+             return `<div class="tiny" style="margin:5px 0 0 8px;padding-left:8px;border-left:2px solid var(--bd)">
+               <b style="font-size:13px">${esc(u.name)}</b> ${u.who?esc(u.who):''}
+               ${u.code?`<span class="pill wn" style="font-size:11px">🔑 ${esc(u.code)}</span>`:'<span class="pill dn" style="font-size:11px">비번 없음</span>'}
+               ${(u.days||[]).length?`<span class="pill" style="font-size:11px">${u.days.map(d=>DOW[d]).join('')}</span>`:''}
+               <div class="muted" style="margin-top:2px">${u.items.map(i=>esc(i.name)+' <b>'+dq(i)+'</b>'+(i.d?' ['+i.d.map(x=>DOW[x]).join('')+']':'')).join(' · ')||'품목없음'}</div>
+               ${u.memo?`<div class="muted" style="opacity:.7">📝 ${esc(u.memo)}</div>`:''}</div>`}).join('')}</div>`).join('');
+      }).join('');
+      return `<div style="margin-top:14px"><b>📍 ${esc(c.name)}</b>${lines}</div>`;
+    }).join('');
+    const dw=r.dow!=null?r.dow:parseD(DATE).getDay();
+    sheet(`<h3 class="sh">이렇게 들어갑니다</h3>
+      <div class="lb" style="margin-top:0">이 명단은 무슨 요일 배달인가요?</div>
+      <div class="dchk" id="bdays">${DOW.map((d,i)=>`<button data-act="bday" data-d="${i}" class="${i===dw?'on':''}">${d}</button>`).join('')}</div>
+      <p class="tiny muted" style="margin:8px 0 14px">고른 요일이 세대에 저장돼요.
+      <b>월·수·금 명단을 각각 한 번씩만 넣어두면</b> 그 다음부터는 안 쳐도 됩니다.
+      명단에 <code class="k">월수금</code> 이 적혀 있으면 그게 우선이에요.</p>
+      <div class="row wrap"><span class="pill ok">세대 ${nu}곳</span><span class="pill">새 품목 ${r.newProducts.length}개</span>
+      ${r.sheets.length?`<span class="pill">명단 ${r.sheets.length}장</span>`:''}
+      ${noCode.length?`<span class="pill dn">비번 없음 ${noCode.length}곳</span>`:''}</div>
+      ${r.newProducts.length?`<p class="tiny muted mt">새 품목: ${r.newProducts.map(esc).join(', ')}</p>`:''}
+      ${r.warn.length?`<p class="tiny" style="color:var(--wn);margin-top:8px">⚠ 못 읽은 줄 ${r.warn.length}개 — ${r.warn.slice(0,6).map(esc).join(' / ')}${r.warn.length>6?' …':''}</p>`:''}
+      <div style="max-height:42vh;overflow:auto;background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:12px">${h}</div>
+      <p class="tiny muted mt">이미 있는 세대는 <b>품목만 갱신</b>되고, 다른 명단에서 온 품목은 그대로 남습니다.</p>
+      <button class="btn pri full mt2" data-act="bulkgo">✅ 지금 명단에 합치기</button>
+      <button class="btn full mt" data-act="bulkgo" data-mode="new">🔄 기존 명단 지우고 새로 넣기</button>
+      <button class="btn full mt" data-act="bulkback">← 고치기</button>`);
+    window.__bulk=r;window.__bulktxt=txt;
+  },
+  bulkback(){
+    A.bulk();
+    setTimeout(()=>{const b=document.getElementById('bulkbox');if(b)b.value=window.__bulktxt||''},20);
+  },
+  bday(e){e.classList.toggle('on')},
+  bulkgo(e){
+    const r=window.__bulk;if(!r)return;
+    /* 화면에서 고른 요일을, 명단 글에 요일이 안 적힌 세대에만 채워 넣는다 */
+    const days=[...document.querySelectorAll('#bdays button.on')].map(b=>+b.dataset.d).sort((a,b)=>a-b);
+    if(!days.length)return toast('배달 요일을 골라주세요');
+    for(const c of r.courses)for(const b of c.blocks)for(const u of b.units)
+      if(!u.days||!u.days.length)u.days=days.slice();
+    const fresh=e&&e.dataset&&e.dataset.mode==='new';
+    if(fresh){
+      if(!confirm('지금 있는 명단(코스·동·라인·세대)을 전부 지우고\n이 명단으로 새로 넣을까요?\n\n우유 품목과 사진은 그대로 남습니다.'))return;
+      S.courses=[];S.blocks=[];S.lines=[];S.units=[];
+    }
+    const wasEmpty=!S.courses.length;
+    applyBulk(r);
+    if(wasEmpty)autoAll();          // 첫 입력일 때만 자동 초안 정렬 (직접 잡아둔 순서는 안 건드림)
+    window.__bulk=null;window.__bulktxt=null;      // 다 넣었으니 임시 글은 비운다
+    save();closeM();VIEW='today';render();toast(fresh?'명단을 새로 넣었어요':'명단을 추가했어요!');
+  },
+  autoall(){
+    if(!confirm('직접 잡아둔 순서를 지우고\n동 번호 → 라인 → 층 순으로 다시 정렬할까요?\n\n요일별로 따로 잡아둔 순서도 함께 지워집니다.'))return;
+    autoAll();save();render();toast('자동 정렬했어요');
+  },
+};
+
+/* 고른 품목을 오늘 조정에 반영하고 조정 화면으로 돌아간다.
+   교체(k.swap)면 원래 수량만큼 그대로 옮기고, 그냥 추가면 1개 넣는다. */
+function addPick(pid){
+  const k=window.__pick;if(!k||!pid)return;
+  const d=day();
+  const u=S.units.find(x=>x.id===k.u)||d.extra.find(x=>x.id===k.u);
+  d.adj[k.u]=d.adj[k.u]||{};
+  const A2=d.adj[k.u];
+  if(k.swap&&k.swap!==pid&&u){
+    const now=(eff(u,d).find(i=>i.pid===k.swap)||{}).qty||0;
+    if(now){
+      A2[k.swap]=(A2[k.swap]||0)-now;
+      if(A2[k.swap]===0)delete A2[k.swap];
+    }
+    A2[pid]=(A2[pid]||0)+(now||1);
+  }else{
+    A2[pid]=(A2[pid]||0)+1;
+  }
+  if(!Object.keys(A2).length)delete d.adj[k.u];
+  window.__pick=null;
+  save();render();A.uedit({dataset:{id:k.u}});
+}
+/* ---------- 색 ---------- */
+function hue(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return `hsl(${h} 70% 55%)`}
+/* onerror 가 없으면 실패했을 때 영원히 안 끝나서 앱이 멈춘다 */
+function blob2b64(b){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.onerror=()=>rej(new Error('사진을 읽지 못했어요'));
+    r.onabort=()=>rej(new Error('사진 읽기가 중단됐어요'));
+    try{r.readAsDataURL(b)}catch(e){rej(e)}
+  });
+}
+function b642blob(d){const[m,b]=d.split(',');const t=m.match(/:(.*?);/)[1];const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:t})}
+
+/* =========================================================
+   명단 파서 — 실제 배달명단(일일/합산) 텍스트를 그대로 읽음
+   ---------------------------------------------------------
+   지원하는 두 가지 형식
+   A. 일일배달명단 : 순번 / 주소(단지 동-호수) .이름 님 / 품명 / 수량 / 요일
+   B. 합산배달명단 : (단지 NNN 동) 그룹 + 호수 / 품명 / 수량 / 요일 / 비고
+   같은 단지가 여러 명단에 나오면 [코드] 뒤의 이름을 기준으로 한 코스에 합침
+   ========================================================= */
+const norm=s=>String(s).toLowerCase().replace(/\s+/g,'');
+const clip=s=>s.length>24?s.slice(0,24)+'…':s;
+
+/* 호수 → 라인 번호(끝 두 자리) → 라인 묶음 이름 */
+function hoLine(ho){const n=parseInt(String(ho).replace(/\D/g,''),10);return n?(n%100||100):0}
+/* 라인은 항상 2개씩 묶는다 — 1·2호 라인이 한 건물(공동현관 하나) */
+function lineName(ln){
+  if(!ln)return '기타';
+  const k=Math.ceil(ln/2);
+  return (k*2-1)+'-'+(k*2)+'라인';
+}
+/* 괄호 안 내용을 [현관 비밀번호, 메모] 로 나눈다
+   - '#' 이 있으면 그 부분만 비번  (#1501 8587 / #501#1006 / #*4875#)
+   - '#' 이 없으면 3자리 이상 숫자가 든 조각을 통째로 비번  (1304열쇠2103종, 열쇠 경비 9658 열)
+   - 숫자가 없으면 전부 메모 */
+function splitCode(s){
+  s=String(s||'').trim();
+  if(!s)return ['',''];
+  const h=s.match(/#[\s#*\d]*\d[\s#*\d]*/);
+  if(h)return [h[0].replace(/\s+/g,' ').trim(),s];
+  const segs=s.split(/\s*[,，/·]\s*/).map(x=>x.trim()).filter(Boolean);
+  const i=segs.findIndex(x=>/\d{3,}/.test(x));
+  if(i<0)return ['',s];
+  return [segs[i],segs.filter((_,k)=>k!==i).join(', ').trim()];
+}
+/* 비번을 빼고 나서 글자가 남아야 메모로 저장 (비번만 있는 괄호는 버림) */
+function worthMemo(s,code){
+  const r=String(s||'').split(code||' ').join(' ');
+  return /[가-힣a-zA-Z]/.test(r);
+}
+/* (월4금3) → {1:4,5:3} */
+function parseDq(s){
+  const c=String(s).replace(/\s/g,'');
+  if(!/^(?:[월화수목금토일]\d+){2,}$/.test(c))return null;
+  const o={};
+  for(const m of c.matchAll(/([월화수목금토일])(\d+)/g))o[DOW.indexOf(m[1])]=+m[2];
+  return o;
+}
+
+function parseBulk(txt){
+  const out={courses:[],newProducts:[],warn:[],sheets:[],dow:null};
+  const known=new Set(S.products.map(p=>norm(p.name)));
+  const seen=new Set();
+  let C=null,B=null,U=null,sheet='',curDanji='';
+  /* explicit = 코스를 [이름] 이나 단독 줄로 "직접" 정했는가.
+     직접 정했으면 그 코스에 계속 담고, 아니면 줄마다 나오는 아파트 이름으로 코스를 나눈다 */
+  let explicit=false;
+
+  const cGet=n=>{let c=out.courses.find(x=>norm(x.name)===norm(n));if(!c){c={name:n,blocks:[]};out.courses.push(c)}return c};
+  /* 동은 "단지명|동번호" 로 구분해서 담는다. 서로 다른 아파트의 같은 동 번호가 섞이지 않게 */
+  const bGet=(c,dg,dj)=>{
+    const k=norm(dj||'')+'|'+dg;
+    let b=c.blocks.find(x=>x.key===k);
+    if(!b){b={key:k,dong:dg,danji:dj||'',name:dg==='기타'?'기타':dg+'동',units:[]};c.blocks.push(b)}
+    return b;
+  };
+  const addItem=(u,name,qty,days)=>{
+    name=String(name).replace(/\s+/g,' ').replace(/^[.,·]+|[.,·]+$/g,'').trim();
+    if(!name||!qty)return;
+    const k=norm(name);
+    if(!known.has(k)&&!seen.has(k)){seen.add(k);out.newProducts.push(name)}
+    u.items.push({name,qty,days:days&&days.length?days:null});
+  };
+
+  for(const raw of txt.split(/\r?\n/)){
+    const t=raw.replace(/[ \t]/g,' ').replace(/\s+/g,' ').trim();
+    if(!t||t.startsWith('//'))continue;
+    /* 명단에 적힌 날짜의 요일을 기억해 둔다 — 2026.08.21(금) */
+    if(out.dow==null){
+      const dm=t.match(/\d{4}\.\d{1,2}\.\d{1,2}\s*[\[(]\s*([월화수목금토일])\s*[\])]/);
+      if(dm)out.dow=DOW.indexOf(dm[1]);
+    }
+    /* --- 머리글·꼬리말·합계표 버리기 --- */
+    if(!t.startsWith('[')&&/배달명단|Page\s*[:：]/.test(t))continue;   // [코드] 줄에도 Page가 붙어 오므로 제외
+    if(/^(순번|호수|품명)[\s(]/.test(t))continue;                      // 한글엔 \b 가 안 먹음
+    if(/(대리점|보급소|영업소)$/.test(t))continue;
+    if(/^\d+곳$/.test(t))continue;
+    if(/합계/.test(t))continue;
+    if(/^[\d\s|.,\-–—=_]+$/.test(t))continue;
+    if(/^(?:\d{2}\.\d{2}\s*[\[(][월화수목금토일][\])]\s*)+$/.test(t))continue;
+
+    let m;
+    /* --- 명단 헤더  [2311]서천현대  2026.08.21(금) --- */
+    if((m=t.match(/^\[(\d{3,5})\]\s*(.*)$/))){
+      sheet=m[1];
+      const nm=m[2]
+        .replace(/\d{4}\.\d{2}\.\d{2}.*$/,'')
+        .replace(/\(\s*주\s*\d*\s*\)/g,'')
+        .replace(/\(\s*달\s*\)/g,'')
+        .replace(/[ㄱ-ㅎㅏ-ㅣ]+\s*\d*\s*종?\s*$/,'')
+        .trim();
+      if(nm){C=cGet(nm);explicit=true;curDanji='';B=null;U=null;out.sheets.push('['+m[1]+'] '+nm)}
+      continue;
+    }
+    /* --- 직접 쓴 코스  [행복마을] --- */
+    if((m=t.match(/^\[\s*([^\]\d][^\]]*)\]$/))){C=cGet(m[1].trim());explicit=true;curDanji='';B=null;U=null;continue}
+
+    /* --- 동 그룹 헤더  (예현현대 101 동) --- */
+    if((m=t.match(/^[（(]\s*(.*?)\s*(\d{1,4})\s*동\s*[)）]$/))){
+      const dj=m[1].replace(/[@#*·]+$/,'').trim();
+      if(dj&&!explicit)C=cGet(dj);
+      else if(!C)C=cGet(dj||('명단 '+(sheet||'1')));
+      curDanji=dj;B=bGet(C,m[2],dj);U=null;continue;
+    }
+
+    /* --- 괄호로 시작하는 줄 = 앞 세대의 비번 / 메모 / 요일별 수량 --- */
+    if(/^[（(]/.test(t)){
+      if(!U){out.warn.push(clip(t));continue}
+      let s=t;
+      const dm=s.match(/[（(]\s*((?:[월화수목금토일]\s*\d+\s*){2,})[)）]/);
+      if(dm){const dq=parseDq(dm[1]);if(dq&&U.items.length)U.items[U.items.length-1].dq=dq;s=s.replace(dm[0],' ')}
+      s=s.trim().replace(/^[（(]\s*/,'').replace(/\s*[)）]\s*$/,'').trim();
+      if(s){
+        const [c,mm]=splitCode(s);
+        if(c&&!U.code)U.code=c;
+        if(mm&&worthMemo(mm,c)&&!(U.memo||'').includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
+      }
+      continue;
+    }
+
+    /* --- 데이터 줄 --- */
+    /* 기준점: "수량 + 요일". 요일이 안 적힌 명단이면 줄 끝의 수량을 기준으로 */
+    let an=t.match(/(\d+)\s*[.,]?\s+([월화수목금토일]{1,7})(?=\s|$)/);
+    let qty,days=null,head,tail='';
+    if(an){
+      qty=+an[1];
+      days=[...an[2]].map(ch=>DOW.indexOf(ch)).filter(x=>x>=0);
+      head=t.slice(0,an.index).trim();
+      tail=t.slice(an.index+an[0].length).trim();
+    }else{
+      an=t.match(/(?:^|\s)(\d+)\s*(?:개|팩|병)?\s*$/);
+      if(!an){
+        /* 숫자가 하나도 없는 짧은 줄 = 아파트(코스) 이름으로 본다.  예: 망포e편한 */
+        if(!/\d/.test(t)&&t.length<=25&&!/님/.test(t)){C=cGet(t);explicit=true;curDanji='';B=null;U=null;continue}
+        out.warn.push(clip(t));continue;
+      }
+      qty=+an[1];
+      head=t.slice(0,an.index).trim();
+    }
+
+    let dong='',ho='',who='',note='',prod='',danji='';
+    const am=head.match(/(\d{1,4})\s*-\s*(\d{1,5})(?!\d)/);
+    if(am){
+      /* 형식 A : 주소에 "동-호수" 가 들어있음 */
+      dong=am[1];ho=am[2];
+      danji=head.slice(0,am.index).trim().replace(/^\d+\s+/,'');     // 앞의 순번 떼기
+      let post=head.slice(am.index+am[0].length).trim();
+      const pm=post.match(/[（(]([^)）]*)[)）]/);                      // 인라인 (비번)
+      if(pm){note=pm[1].trim();post=(post.slice(0,pm.index)+' '+post.slice(pm.index+pm[0].length)).replace(/\s+/g,' ').trim()}
+      /* 이름: ".이름 님" → "이름 님" → 첫 낱말이 순수 한글 2~4자면 이름으로 */
+      const nm=post.match(/[.·]\s*([가-힣]{2,4})\s*(?:님)?(?=\s|$)/)||post.match(/([가-힣]{2,4})\s*님(?=\s|$)/);
+      if(nm){
+        who=nm[1];
+        const pre=post.slice(0,nm.index).replace(/[.·]\s*$/,'').trim();
+        if(pre)note=(note?note+' ':'')+pre;                          // 7/8월얼음 같은 건 메모로
+        post=post.slice(nm.index+nm[0].length).trim();
+      }else{
+        const tk=post.split(' ').filter(Boolean);
+        if(tk.length>=2&&/^[가-힣]{2,4}$/.test(tk[0])){who=tk[0];post=tk.slice(1).join(' ')}
+      }
+      prod=post;
+    }else{
+      /* 형식 B : head = 호수 + 품명,  tail(비고) = 동-호수 이름 님 */
+      const h=head.match(/^(\d{1,5})\s+(.*)$/);
+      if(h){ho=h[1];prod=h[2].trim()}else prod=head;
+      const bm=tail.match(/(\d{1,4})\s*-\s*(\d{1,5})(?!\d)/);
+      if(bm){dong=bm[1];if(!ho)ho=bm[2]}
+      const wm=tail.match(/([가-힣]{2,4})\s*님/);
+      if(wm)who=wm[1];
+      const pm=tail.match(/[（(]([^)）]*)[)）]/);
+      if(pm&&!/^\s*(?:VIP|vip)\s*$/.test(pm[1]))note=pm[1].trim();
+    }
+
+    /* 호수가 없으면 = 앞 세대에 품목 한 줄 더 붙는 경우 (예: 무료얼음) */
+    if(!ho){
+      if(U){addItem(U,prod,qty,days);continue}
+      out.warn.push(clip(t));continue;
+    }
+
+    /* 코스를 직접 정하지 않았으면, 줄에 적힌 아파트 이름마다 코스를 따로 만든다 */
+    if(danji&&!explicit)C=cGet(danji);
+    else if(!C)C=cGet(danji||('명단 '+(sheet||'1')));
+    if(danji)curDanji=danji;
+    if(dong)B=bGet(C,dong,danji||curDanji);
+    else if(!B)B=bGet(C,'기타','');
+
+    U=B.units.find(x=>x.ho===ho);
+    if(!U){U={ho,name:ho+'호',who:'',code:'',memo:'',items:[]};B.units.push(U)}
+    if(who&&!U.who)U.who=who;
+    if(note){
+      const [c,mm]=splitCode(note);
+      if(c&&!U.code)U.code=c;
+      if(mm&&worthMemo(mm,c)&&!(U.memo||'').includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
+    }
+    addItem(U,prod,qty,days);
+  }
+
+  /* 마무리 1: 같은 코스에 같은 동 번호가 서로 다른 단지로 들어왔으면 단지명을 붙여 구분 */
+  for(const c of out.courses){
+    const byDong={};
+    c.blocks.forEach(b=>{(byDong[b.dong]=byDong[b.dong]||new Set()).add(b.danji||'')});
+    c.blocks.forEach(b=>{
+      if(b.dong==='기타')return;
+      b.name=(byDong[b.dong].size>1&&b.danji?b.danji+' ':'')+b.dong+'동';
+    });
+  }
+  /* 마무리 2: 세대 요일 = 품목 요일의 합집합, 다른 품목만 개별 요일 유지 */
+  for(const c of out.courses)for(const b of c.blocks)for(const u of b.units){
+    const all=[...new Set(u.items.flatMap(i=>i.days||[]))].sort();
+    u.days=all;
+    for(const i of u.items){
+      if(i.days&&i.days.join()!==all.join())i.d=i.days;
+      delete i.days;
+    }
+  }
+  out.courses=out.courses.filter(c=>c.blocks.some(b=>b.units.length));
+  return out;
+}
+
+function applyBulk(r){
+  const pmap=new Map(S.products.map(p=>[norm(p.name),p.id]));
+  const getP=n=>{
+    const k=norm(n);
+    if(pmap.has(k))return pmap.get(k);
+    const p={id:uid(),name:n,color:hue(n)};S.products.push(p);pmap.set(k,p.id);return p.id;
+  };
+  for(const c of r.courses){
+    let C=S.courses.find(x=>norm(x.name)===norm(c.name));
+    if(!C){C={id:uid(),name:c.name,sort:S.courses.length};S.courses.push(C)}
+    for(const b of c.blocks){
+      let B=S.blocks.find(x=>x.cid===C.id&&norm(x.name)===norm(b.name));
+      if(!B){B={id:uid(),cid:C.id,name:b.name,sort:S.blocks.filter(x=>x.cid===C.id).length};S.blocks.push(B)}
+      for(const u of b.units){
+        const ln=lineName(hoLine(u.ho));
+        let L=S.lines.find(x=>x.bid===B.id&&x.name===ln);
+        if(!L){L={id:uid(),bid:B.id,name:ln,code:'',memo:'',sort:S.lines.filter(x=>x.bid===B.id).length};S.lines.push(L)}
+        /* 같은 동 안에 이미 있으면(다른 라인에 옮겨놨더라도) 그 세대를 다시 씀 */
+        const dongLines=S.lines.filter(x=>x.bid===B.id).map(x=>x.id);
+        let U=S.units.find(x=>dongLines.includes(x.lid)&&norm(x.name)===norm(u.name));
+        if(!U){
+          U={id:uid(),lid:L.id,name:u.name,who:u.who||'',code:u.code||'',memo:u.memo||'',
+             items:[],days:u.days||[],sort:S.units.filter(x=>x.lid===L.id).length};
+          S.units.push(U);
+        }else{
+          if(u.who)U.who=u.who;
+          if(u.code)U.code=u.code;
+          if(u.memo&&!(U.memo||'').includes(u.memo))U.memo=(U.memo?U.memo+' / ':'')+u.memo;
+          U.days=[...new Set([...(U.days||[]),...(u.days||[])])].sort((x,y)=>x-y);
+          U.items=U.items||[];
+        }
+        /* 품목 병합: 같은 품목이면 수량 갱신, 없으면 추가 (다른 명단 것은 그대로 둠) */
+        for(const it of u.items){
+          const pid=getP(it.name);
+          const ex=U.items.find(x=>x.pid===pid);
+          if(ex){ex.qty=it.qty;it.dq?ex.dq=it.dq:delete ex.dq;it.d?ex.d=it.d:delete ex.d}
+          else{const nu={pid,qty:it.qty};if(it.dq)nu.dq=it.dq;if(it.d)nu.d=it.d;U.items.push(nu)}
+        }
+      }
+    }
+  }
+}
+
+/* 호수 끝 두 자리로 라인을 다시 배정 */
+function reassignLines(){
+  for(const B of S.blocks){
+    for(const u of S.units.filter(x=>S.lines.some(l=>l.id===x.lid&&l.bid===B.id))){
+      const ln=lineName(hoLine(u.name));
+      let L=S.lines.find(x=>x.bid===B.id&&x.name===ln);
+      if(!L){L={id:uid(),bid:B.id,name:ln,code:'',memo:'',sort:S.lines.filter(x=>x.bid===B.id).length};S.lines.push(L)}
+      u.lid=L.id;
+    }
+  }
+  S.lines=S.lines.filter(l=>S.units.some(u=>u.lid===l.id));
+  autoAll();
+}
+
+/* 규칙 기반 자동 동선 정렬: 코스순 → 동 번호 → 라인 번호 → 층(기본 내림차순)
+   요일별로 따로 잡아둔 순서는 전부 지우고 기본 순서 하나로 되돌린다 */
+function autoAll(){
+  OW=null;S.order={};
+  const n=s=>{const m=String(s).match(/\d+/);return m?+m[0]:9999};
+  courses().forEach((c,i)=>c.sort=i);
+  S.courses.forEach(c=>blocksOf(c.id).sort((a,b)=>n(a.name)-n(b.name)).forEach((b,i)=>b.sort=i));
+  S.blocks.forEach(b=>linesOf(b.id).sort((a,b2)=>n(a.name)-n(b2.name)).forEach((l,i)=>l.sort=i));
+  S.lines.forEach(l=>unitsOf(l.id).sort((a,b)=>S.set.floorDesc?n(b.name)-n(a.name):n(a.name)-n(b.name)).forEach((u,i)=>u.sort=i));
+}
+
+/* =========================================================
+   이벤트
+   ========================================================= */
+document.addEventListener('click',ev=>{
+  const el=ev.target.closest('[data-act]');
+  if(!el)return;
+  if(el.tagName==='INPUT'&&el.type==='file')return;
+  if(el.classList.contains('ov')&&ev.target!==el)return;
+  const f=A[el.dataset.act];
+  if(f){ev.preventDefault();f(el,ev)}
+});
+document.addEventListener('change',ev=>{
+  const el=ev.target.closest('[data-act]');if(!el)return;
+  if(el.tagName==='SELECT'||el.type==='file'){const f=A[el.dataset.act];if(f)f(el,ev)}
+});
+/* 검색창처럼 입력할 때마다 반응해야 하는 것 (data-act 를 쓰면 클릭이 가로채여 포커스가 안 잡힘) */
+document.addEventListener('input',ev=>{
+  const el=ev.target.closest('[data-oninput]');if(!el)return;
+  const f=A[el.dataset.oninput];if(f)f(el,ev);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+
+/* 부팅
+   화면을 먼저 그린 뒤 사진을 읽는다. 사진 읽기가 어디선가 멈춰도 앱은 정상적으로 뜬다. */
+(async()=>{
+  const draw=()=>{
+    try{render()}
+    catch(e){
+      $('#main').innerHTML=`<div class="card pad"><div class="b">화면을 그리지 못했어요</div>
+        <p class="small muted">${esc(String(e&&e.message||e))}</p>
+        <button class="btn full mt" onclick="location.reload()">새로고침</button>
+        <button class="btn dn full mt" data-act="wipe">전체 삭제 후 다시 시작</button></div>`;
+    }
+  };
+  draw();                                  // ① 먼저 오늘 배달 화면부터 띄우고
+  try{await loadPics()}catch(e){}          // ② 사진은 뒤따라 읽어서
+  draw();                                  // ③ 사진 붙여 다시 그림
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
