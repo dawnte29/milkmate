@@ -273,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v37 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v38 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -744,8 +744,13 @@ function delLabel(t,id){
   if(t&&t!=='u'&&!unitsUnder(t,id).length)return '🗑 빈 '+({c:'코스',b:'동',l:'라인'}[t])+' 삭제';
   return MST.day==null?'🗑 완전히 삭제 (모든 요일)':`🚫 ${DOW[MST.day]}요일 배달에서 빼기`;
 }
-/* 요일을 골랐으면 그날 배달이 없는 코스·동·라인은 목록에서 숨긴다 */
-const shown=(t,id)=>MST.day==null||unitsUnder(t,id).some(u=>onDay(u,MST.day));
+/* 요일을 골랐으면 그날 배달이 없는 코스·동·라인은 목록에서 숨긴다.
+   단, 세대가 아직 하나도 없는 건(= 방금 만든 것) 숨기지 않는다 — 만들자마자 사라지면 안 되니까 */
+const shown=(t,id)=>{
+  if(MST.day==null)return true;
+  const us=unitsUnder(t,id);
+  return !us.length||us.some(u=>onDay(u,MST.day));
+};
 const visCourses=()=>courses().filter(x=>shown('c',x.id));
 const visBlocks=cid=>blocksOf(cid).filter(x=>shown('b',x.id));
 const visLines=bid=>linesOf(bid).filter(x=>shown('l',x.id));
