@@ -243,9 +243,11 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
 .exwrap{position:sticky;top:0;z-index:3;background:var(--sf);padding:10px 0 9px}
 .exline{
   background:var(--sf2);border:1px solid var(--bd);border-radius:10px;
-  padding:11px 12px;font:600 13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  overflow-x:auto;white-space:nowrap;
+  padding:10px 11px;font:600 13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  /* 글자를 줄이는 대신 줄바꿈시킨다 — 색으로 구분하니 줄이 바뀌어도 헷갈리지 않음 */
+  white-space:normal;word-break:keep-all;overflow-wrap:anywhere;
 }
+.exline b{white-space:nowrap}
 .ex-k{color:var(--wn)}
 .ex-m{color:var(--ok)}
 </style>
@@ -270,7 +272,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v34 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v36 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -1421,9 +1423,7 @@ const A={
           <span class="tiny"><b class="ex-m">📝 (메모)</b></span>
         </div>
       </div>
-      <textarea id="bulkbox" rows="11" data-oninput="bulklive" placeholder="뜨란채 1001-1603 신문정 (1603#1004 벨) 연세A2750 1
-뜨란채 1003-1304 서현덕 (1304열쇠2103종) 연세무항750 2 (7시까지꼭투입)
-그린빌 101-201 박민수 (#0201 2580) 제주목초120 3"></textarea>
+      <textarea id="bulkbox" rows="11" data-oninput="bulklive"></textarea>
       <div id="bulkstat" class="mt"></div>
       <button class="btn pri full mt2" data-act="bulkprev">미리보기 →</button>`);
     setTimeout(()=>{const b=document.getElementById('bulkbox');if(b&&b.value)A.bulklive(b)},30);
@@ -1617,6 +1617,21 @@ function parseBulk(txt){
     if(!b){b={key:k,dong:dg,danji:dj||'',name:dg==='기타'?'기타':dg+'동',units:[]};c.blocks.push(b)}
     return b;
   };
+  /* "연세무항750 1 연세무항170 3" → 품목 두 개로 나눈다.
+     숫자만 있는 낱말이 수량. 750·900 같은 용량과 헷갈리지 않게 50 이하만 수량으로 본다
+     (개·팩·병이 붙어 있으면 크기와 상관없이 수량). */
+  const splitItems=text=>{
+    const toks=String(text||'').trim().split(/\s+/).filter(Boolean);
+    const list=[];let buf=[];
+    const push=(n,q)=>{n=n.replace(/^[.,·]+|[.,·]+$/g,'').trim();if(n)list.push({name:n,qty:q})};
+    for(const tk of toks){
+      const m=tk.match(/^(\d+)\s*(개|팩|병)?$/);
+      if(m&&buf.length&&(m[2]||+m[1]<=50)){push(buf.join(' '),+m[1]);buf=[]}
+      else buf.push(tk);
+    }
+    if(buf.length)push(buf.join(' '),1);      // 수량을 안 적었으면 1개
+    return list;
+  };
   const addItem=(u,name,qty,days)=>{
     name=String(name).replace(/\s+/g,' ').replace(/^[.,·]+|[.,·]+$/g,'').trim();
     if(!name||!qty)return;
@@ -1698,7 +1713,8 @@ function parseBulk(txt){
     if(an){
       qty=+an[1];
       days=[...an[2]].map(ch=>DOW.indexOf(ch)).filter(x=>x>=0);
-      head=t.slice(0,an.index).trim();
+      /* 수량을 품목 영역에 되돌려 붙인다 — 한 줄에 품목이 여러 개일 수 있어서 */
+      head=(t.slice(0,an.index)+' '+an[1]).trim();
       tail=t.slice(an.index+an[0].length).trim();
     }else{
       an=t.match(/(?:^|\s)(\d+)\s*(?:개|팩|병)?\s*$/);
@@ -1708,7 +1724,7 @@ function parseBulk(txt){
         out.warn.push(clip(t));continue;
       }
       qty=+an[1];
-      head=t.slice(0,an.index).trim();
+      head=(t.slice(0,an.index)+' '+an[1]).trim();
     }
 
     let dong='',ho='',who='',note='',prod='',danji='';
@@ -1746,7 +1762,7 @@ function parseBulk(txt){
 
     /* 호수가 없으면 = 앞 세대에 품목 한 줄 더 붙는 경우 (예: 무료얼음) */
     if(!ho){
-      if(U){addItem(U,prod,qty,days);continue}
+      if(U){splitItems(prod).forEach(it=>addItem(U,it.name,it.qty,days));continue}
       out.warn.push(clip(t));continue;
     }
 
@@ -1766,7 +1782,7 @@ function parseBulk(txt){
       if(mm&&!(U.memo||"").includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
     }
     if(tailMemo&&!(U.memo||'').includes(tailMemo))U.memo=(U.memo?U.memo+' ':'')+tailMemo;
-    addItem(U,prod,qty,days);
+    splitItems(prod).forEach(it=>addItem(U,it.name,it.qty,days));
     if(tailDq&&U.items.length)U.items[U.items.length-1].dq=tailDq;
   }
 
