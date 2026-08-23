@@ -273,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v42 · 2026-08-24';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v43 · 2026-08-24';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -861,7 +861,8 @@ function vSet(){
   </div>
   <div class="card pad">
     <div class="row"><span class="b grow">세대 정렬 순서</span></div>
-    <p class="tiny muted" style="margin:4px 0 10px">'층순 정렬' 눌렀을 때 적용돼요.</p>
+    <p class="tiny muted" style="margin:4px 0 10px">한 라인 안에서 어느 층부터 도는지. <b>누르면 바로 전체에 적용</b>돼요.
+    (요일별로 따로 잡아둔 세대 순서는 해제됩니다)</p>
     <div class="row">
       <button class="btn sm grow ${S.set.floorDesc?'pri':''}" data-act="floor" data-v="1">높은 층 → 낮은 층</button>
       <button class="btn sm grow ${!S.set.floorDesc?'pri':''}" data-act="floor" data-v="0">낮은 층 → 높은 층</button>
@@ -1372,7 +1373,12 @@ const A={
   pqclear(){PQ='';render();const i=document.getElementById('pq');if(i)i.focus()},
   psort(e){S.set.psort=e.dataset.v;save();render()},
   theme(e){S.set.theme=e.dataset.v;save();render()},
-  floor(e){S.set.floorDesc=e.dataset.v==='1';save();render()},
+  floor(e){
+    S.set.floorDesc=e.dataset.v==='1';
+    sortAllByFloor();                       // 설정을 바꾸면 바로 전체에 적용
+    save();render();
+    toast(S.set.floorDesc?'높은 층부터로 바꿨어요':'낮은 층부터로 바꿨어요');
+  },
   relines(){
     if(!confirm('모든 세대를 호수 끝 두 자리 기준으로\n라인에 다시 배정할까요?\n(직접 옮겨둔 게 있으면 초기화됩니다)'))return;
     reassignLines();save();render();toast('라인을 다시 배정했어요');
@@ -1891,6 +1897,17 @@ function applyBulk(r){
   }
 }
 
+/* 모든 라인 안의 세대를 층순으로 다시 정렬한다 (아파트·동·라인 순서는 그대로) */
+function sortAllByFloor(){
+  OW=null;
+  const n=s=>{const m=String(s).match(/\d+/);return m?+m[0]:0};
+  S.lines.forEach(l=>{
+    const us=unitsOf(l.id);
+    us.sort((a,b)=>S.set.floorDesc?n(b.name)-n(a.name):n(a.name)-n(b.name));
+    us.forEach((u,i)=>u.sort=i);
+    clearOrder(us.map(u=>u.id));            // 요일별로 따로 잡아둔 세대 순서는 해제
+  });
+}
 /* 호수 끝 두 자리로 라인을 다시 배정 */
 function reassignLines(){
   for(const B of S.blocks){
