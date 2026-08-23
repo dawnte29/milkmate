@@ -238,6 +238,16 @@ textarea{resize:vertical;line-height:1.5}
   max-width:calc(100vw - 24px);overflow:hidden;text-overflow:ellipsis;
 }
 code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
+/* 붙여넣기 형식 예시 — 폰에서 줄이 접혀 어긋나지 않게 가로 스크롤 + 색으로 구분.
+   타이핑하는 동안에도 계속 보이도록 입력칸 위에 붙여 둔다 */
+.exwrap{position:sticky;top:0;z-index:3;background:var(--sf);padding:10px 0 9px}
+.exline{
+  background:var(--sf2);border:1px solid var(--bd);border-radius:10px;
+  padding:11px 12px;font:600 13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  overflow-x:auto;white-space:nowrap;
+}
+.ex-k{color:var(--wn)}
+.ex-m{color:var(--ok)}
 </style>
 </head>
 <body>
@@ -260,7 +270,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v28 · 2026-08-21';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v34 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -1399,13 +1409,24 @@ const A={
   /* --- 일괄 입력 --- */
   bulk(){
     sheet(`<h3 class="sh">📋 명단 붙여넣기</h3>
-      <p class="small muted" style="margin:-4px 0 0">사장님께 받은 명단을 <b>아파트명 동-호수 이름 (비번) 품명 수량</b> 순서로 써주세요.<br>
+      <p class="small muted" style="margin:-4px 0 0">사장님께 받은 명단을 이 순서로 써주세요.
       여러 명단을 한꺼번에 붙여넣으면 <b>같은 아파트끼리 자동으로 합쳐집니다.</b></p>
-      <div class="lb">여기에 붙여넣기</div>
-      <textarea id="bulkbox" rows="13" placeholder="망포e편한 101-201 김미영 (#0201 2580) 제주목초120 3
-서천현대 103-1501 이명자 (#1501 8587) 제주착한900 1
-서천현대 106-701 김혜리 (#701#3780) 더밀크750 1"></textarea>
+      <p class="tiny muted" style="margin:6px 0 0">괄호 안은 <b>통째로</b> 비밀번호가 돼요. 메모가 없으면 뒤 괄호는 생략하면 됩니다.</p>
+      <div class="exwrap">
+        <div class="exline">뜨란채 1003-1304 서현덕 <b class="ex-k">(1304열쇠2103종)</b> 연세무항750 2 <b class="ex-m">(7시까지꼭투입)</b></div>
+        <div class="row wrap" style="gap:12px;margin-top:6px">
+          <span class="tiny muted">아파트명 동-호수 이름</span>
+          <span class="tiny"><b class="ex-k">🔑 (비밀번호)</b></span>
+          <span class="tiny muted">품명 수량</span>
+          <span class="tiny"><b class="ex-m">📝 (메모)</b></span>
+        </div>
+      </div>
+      <textarea id="bulkbox" rows="11" data-oninput="bulklive" placeholder="뜨란채 1001-1603 신문정 (1603#1004 벨) 연세A2750 1
+뜨란채 1003-1304 서현덕 (1304열쇠2103종) 연세무항750 2 (7시까지꼭투입)
+그린빌 101-201 박민수 (#0201 2580) 제주목초120 3"></textarea>
+      <div id="bulkstat" class="mt"></div>
       <button class="btn pri full mt2" data-act="bulkprev">미리보기 →</button>`);
+    setTimeout(()=>{const b=document.getElementById('bulkbox');if(b&&b.value)A.bulklive(b)},30);
     /* 붙여넣기 칸은 항상 비어서 열린다. 이전에 쓴 글은 '← 고치기' 로 돌아올 때만 되살린다 */
   },
   bulkprev(){
@@ -1443,13 +1464,30 @@ const A={
       ${r.sheets.length?`<span class="pill">명단 ${r.sheets.length}장</span>`:''}
       ${noCode.length?`<span class="pill dn">비번 없음 ${noCode.length}곳</span>`:''}</div>
       ${r.newProducts.length?`<p class="tiny muted mt">새 품목: ${r.newProducts.map(esc).join(', ')}</p>`:''}
-      ${r.warn.length?`<p class="tiny" style="color:var(--wn);margin-top:8px">⚠ 못 읽은 줄 ${r.warn.length}개 — ${r.warn.slice(0,6).map(esc).join(' / ')}${r.warn.length>6?' …':''}</p>`:''}
+      ${r.warn.length?`<p class="tiny" style="color:var(--dn);margin-top:8px">⚠ 못 읽은 줄 ${r.warn.length}개 — ${r.warn.slice(0,6).map(esc).join(' / ')}${r.warn.length>6?' …':''}</p>`:''}
+      ${(r.empty||[]).length?`<p class="tiny" style="color:var(--wn);margin-top:6px">· ${r.empty.map(esc).join(', ')} 아래에 세대가 없어서 빠집니다</p>`:''}
       <div style="max-height:42vh;overflow:auto;background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:12px">${h}</div>
       <p class="tiny muted mt">이미 있는 세대는 <b>품목만 갱신</b>되고, 다른 명단에서 온 품목은 그대로 남습니다.</p>
       <button class="btn pri full mt2" data-act="bulkgo">✅ 지금 명단에 합치기</button>
       <button class="btn full mt" data-act="bulkgo" data-mode="new">🔄 기존 명단 지우고 새로 넣기</button>
       <button class="btn full mt" data-act="bulkback">← 고치기</button>`);
     window.__bulk=r;window.__bulktxt=txt;
+  },
+  /* 타이핑하는 동안 몇 줄이 제대로 인식되는지 바로 보여준다 */
+  bulklive(el){
+    const box=document.getElementById('bulkstat');if(!box)return;
+    const t=String(el.value||'').trim();
+    if(!t){box.innerHTML='';return}
+    let r;try{r=parseBulk(t)}catch(e){box.innerHTML='';return}
+    const n=r.courses.reduce((a,c)=>a+c.blocks.reduce((x,b)=>x+b.units.length,0),0);
+    const bad=r.warn.length,emp=(r.empty||[]).length;
+    box.innerHTML=`<div class="row wrap" style="gap:6px">
+        <span class="pill ${n?'ok':'dn'}">세대 ${n}곳</span>
+        ${r.newProducts.length?`<span class="pill">새 품목 ${r.newProducts.length}</span>`:''}
+        ${bad?`<span class="pill dn">못 읽은 줄 ${bad}</span>`:''}
+      </div>
+      ${bad?`<div class="tiny" style="color:var(--dn);margin-top:5px">⚠ 못 읽음 — ${r.warn.slice(-2).map(esc).join(' / ')}</div>`:''}
+      ${emp?`<div class="tiny" style="color:var(--wn);margin-top:4px">· ${r.empty.map(esc).join(', ')} 아래에 아직 세대가 없어요</div>`:''}`;
   },
   bulkback(){
     A.bulk();
@@ -1540,19 +1578,18 @@ function lineName(ln){
    - '#' 이 없으면 3자리 이상 숫자가 든 조각을 통째로 비번  (1304열쇠2103종, 열쇠 경비 9658 열)
    - 숫자가 없으면 전부 메모 */
 function splitCode(s){
-  s=String(s||'').trim();
+  s=String(s||'').replace(/\s+/g,' ').trim();
   if(!s)return ['',''];
-  const h=s.match(/#[\s#*\d]*\d[\s#*\d]*/);
-  if(h)return [h[0].replace(/\s+/g,' ').trim(),s];
-  const segs=s.split(/\s*[,，/·]\s*/).map(x=>x.trim()).filter(Boolean);
-  const i=segs.findIndex(x=>/\d{3,}/.test(x));
-  if(i<0)return ['',s];
-  return [segs[i],segs.filter((_,k)=>k!==i).join(', ').trim()];
-}
-/* 비번을 빼고 나서 글자가 남아야 메모로 저장 (비번만 있는 괄호는 버림) */
-function worthMemo(s,code){
-  const r=String(s||'').split(code||' ').join(' ');
-  return /[가-힣a-zA-Z]/.test(r);
+  /* 규칙은 단순하게 — 괄호 안 전체가 비밀번호.
+     메모를 따로 남기고 싶으면 콤마로 구분한다.
+       (1603#1004 벨)              → 🔑 1603#1004 벨
+       (1603#1004 벨, 7시까지)     → 🔑 1603#1004 벨   📝 7시까지
+       (문 앞에 두세요)            → 숫자가 없으면 전부 메모 */
+  const segs=s.split(/\s*[,，]\s*/).map(x=>x.trim()).filter(Boolean);
+  const code=segs.shift()||'';
+  const memo=segs.join(', ');
+  if(!/\d/.test(code))return ['',[code,memo].filter(Boolean).join(', ')];
+  return [code,memo];
 }
 /* (월4금3) → {1:4,5:3} */
 function parseDq(s){
@@ -1564,7 +1601,7 @@ function parseDq(s){
 }
 
 function parseBulk(txt){
-  const out={courses:[],newProducts:[],warn:[],sheets:[],dow:null};
+  const out={courses:[],newProducts:[],warn:[],empty:[],sheets:[],dow:null};
   const known=new Set(S.products.map(p=>norm(p.name)));
   const seen=new Set();
   let C=null,B=null,U=null,sheet='',curDanji='';
@@ -1589,7 +1626,7 @@ function parseBulk(txt){
   };
 
   for(const raw of txt.split(/\r?\n/)){
-    const t=raw.replace(/[ \t]/g,' ').replace(/\s+/g,' ').trim();
+    let t=raw.replace(/[ \t]/g,' ').replace(/\s+/g,' ').trim();
     if(!t||t.startsWith('//'))continue;
     /* 명단에 적힌 날짜의 요일을 기억해 둔다 — 2026.08.21(금) */
     if(out.dow==null){
@@ -1639,12 +1676,22 @@ function parseBulk(txt){
       if(s){
         const [c,mm]=splitCode(s);
         if(c&&!U.code)U.code=c;
-        if(mm&&worthMemo(mm,c)&&!(U.memo||'').includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
+        if(mm&&!(U.memo||"").includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
       }
       continue;
     }
 
     /* --- 데이터 줄 --- */
+    /* 줄 맨 끝의 (…) 는 메모로 떼어둔다 — "… 연세A2750 1 (7시까지꼭투입)"
+       (월4금3) 처럼 요일별 수량이면 메모가 아니라 수량으로 */
+    let tailMemo='',tailDq=null;
+    const tm=t.match(/[（(]([^)）]*)[)）]\s*$/);
+    if(tm&&tm.index>0){
+      const inner=tm[1].trim();
+      const d0=parseDq(inner);
+      if(d0)tailDq=d0; else tailMemo=inner;
+      t=t.slice(0,tm.index).trim();
+    }
     /* 기준점: "수량 + 요일". 요일이 안 적힌 명단이면 줄 끝의 수량을 기준으로 */
     let an=t.match(/(\d+)\s*[.,]?\s+([월화수목금토일]{1,7})(?=\s|$)/);
     let qty,days=null,head,tail='';
@@ -1716,9 +1763,11 @@ function parseBulk(txt){
     if(note){
       const [c,mm]=splitCode(note);
       if(c&&!U.code)U.code=c;
-      if(mm&&worthMemo(mm,c)&&!(U.memo||'').includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
+      if(mm&&!(U.memo||"").includes(mm))U.memo=(U.memo?U.memo+' ':'')+mm;
     }
+    if(tailMemo&&!(U.memo||'').includes(tailMemo))U.memo=(U.memo?U.memo+' ':'')+tailMemo;
     addItem(U,prod,qty,days);
+    if(tailDq&&U.items.length)U.items[U.items.length-1].dq=tailDq;
   }
 
   /* 마무리 1: 같은 코스에 같은 동 번호가 서로 다른 단지로 들어왔으면 단지명을 붙여 구분 */
@@ -1739,6 +1788,8 @@ function parseBulk(txt){
       delete i.days;
     }
   }
+  /* 세대가 하나도 안 붙은 아파트 이름 줄은 따로 알려준다 (오타로 생긴 줄일 수 있음) */
+  out.empty=out.courses.filter(c=>!c.blocks.some(b=>b.units.length)).map(c=>c.name);
   out.courses=out.courses.filter(c=>c.blocks.some(b=>b.units.length));
   return out;
 }
