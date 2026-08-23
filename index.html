@@ -211,6 +211,7 @@ textarea{resize:vertical;line-height:1.5}
 .dchk button{width:42px;height:42px;border-radius:11px;background:var(--sf2);border:1px solid var(--bd);font-weight:700;font-size:15px}
 .dchk button.on{background:var(--ac);border-color:var(--ac);color:#fff}
 .adjit{border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-top:10px;background:var(--sf2)}
+.irow{border:1px solid var(--bd);border-radius:12px;padding:9px 10px;margin-top:9px;background:var(--sf2)}
 .stp{display:flex;align-items:center;gap:0;border:1px solid var(--bd);border-radius:10px;overflow:hidden;flex:none}
 .stp button{width:40px;height:40px;background:var(--sf2);font-size:19px;font-weight:700;display:grid;place-items:center}
 .stp .v{min-width:38px;text-align:center;font-weight:800;font-size:16px}
@@ -272,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v36 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v37 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -933,23 +934,29 @@ function itemRows(){
   const opts=S.products.slice().sort((a,b)=>a.name.localeCompare(b.name,'ko'));
   /* 요일을 골랐으면 그날 안 나가는(0개) 품목 줄은 숨긴다 — ✕ 를 누르면 줄이 바로 사라지도록 */
   const rows=EDIT_ITEMS.map((it,i)=>({it,i})).filter(r=>MST.day==null||editQty(r.it)>0);
-  box.innerHTML=rows.map(({it,i})=>{
+  box.innerHTML=rows.map(({it,i},k)=>{
     const own=MST.day!=null&&it.dq&&it.dq[MST.day]!=null;   // 이 요일만 따로 정해둔 값
-    const other=it.dq?Object.keys(it.dq).filter(k=>+k!==MST.day).map(k=>DOW[k]+it.dq[k]).join(' '):'';
-    return `<div class="row mt">
-      <select data-act="ichg" data-i="${i}" class="grow">
-        ${opts.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}
-        <option value="__new">＋ 새 품목 만들기…</option>
-      </select>
-      <div class="stp"><button data-act="iq" data-i="${i}" data-d="-1">−</button>
-      <span class="v" ${own?'style="color:var(--ac)"':''}>${editQty(it)}</span>
-      <button data-act="iq" data-i="${i}" data-d="1">＋</button></div>
-      <button class="btn xs dn" data-act="idel" data-i="${i}">✕</button></div>
-      ${own?`<div class="row" style="margin-top:4px"><span class="tiny muted grow">${it.qty>0
-          ?`기본 ${it.qty}개`
-          :`<b style="color:var(--ac)">${DOW[MST.day]}요일에만</b>`}${other?` · 다른 요일 ${esc(other)}`:''}</span>
-        ${it.qty>0?`<button class="btn xs" data-act="iqreset" data-i="${i}">↺ 기본값으로</button>`:''}</div>`
-      :other?`<div class="tiny muted" style="margin-top:4px">다른 요일에 따로 정해둔 값: ${esc(other)}</div>`:''}`;
+    const other=it.dq?Object.keys(it.dq).filter(x=>+x!==MST.day).map(x=>DOW[x]+it.dq[x]).join(' '):'';
+    const note=own
+      ?`${it.qty>0?`기본 ${it.qty}개`:`<b style="color:var(--ac)">${DOW[MST.day]}요일에만</b>`}${other?` · 다른 요일 ${esc(other)}`:''}`
+      :(other?`다른 요일에 따로: ${esc(other)}`:'');
+    return `<div class="irow">
+      <div class="row">
+        <select data-act="ichg" data-i="${i}" class="grow">
+          ${opts.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)}</option>`).join('')}
+          <option value="__new">＋ 새 품목 만들기…</option>
+        </select>
+        <div class="stp"><button data-act="iq" data-i="${i}" data-d="-1">−</button>
+        <span class="v" ${own?'style="color:var(--ac)"':''}>${editQty(it)}</span>
+        <button data-act="iq" data-i="${i}" data-d="1">＋</button></div>
+        <button class="btn xs dn" data-act="idel" data-i="${i}">✕</button>
+      </div>
+      <div class="row" style="margin-top:5px;gap:6px">
+        ${rows.length>1?`<button class="btn xs" data-act="imv" data-i="${i}" data-d="-1" ${k===0?'style="opacity:.25"':''}>▲</button>
+        <button class="btn xs" data-act="imv" data-i="${i}" data-d="1" ${k===rows.length-1?'style="opacity:.25"':''}>▼</button>`:''}
+        <span class="tiny muted grow">${note}</span>
+        ${own&&it.qty>0?`<button class="btn xs" data-act="iqreset" data-i="${i}">↺ 기본값으로</button>`:''}
+      </div></div>`;
   }).join('')||`<p class="small muted mt">${MST.day==null
     ?'품목이 없어요. 아래에서 추가하세요.'
     :`${DOW[MST.day]}요일에 나가는 품목이 없어요.`}</p>`;
@@ -1226,6 +1233,16 @@ const A={
   },
   iq(e){const it=EDIT_ITEMS[+e.dataset.i];setEditQty(it,Math.max(0,editQty(it)+ +e.dataset.d));itemRows()},
   iqreset(e){const it=EDIT_ITEMS[+e.dataset.i];if(it.dq){delete it.dq[MST.day];if(!Object.keys(it.dq).length)delete it.dq}itemRows()},
+  /* 품목 순서 바꾸기 — 배달 화면에 이 순서대로 나온다 (화면에 보이는 줄 기준으로 이동) */
+  imv(e){
+    const i=+e.dataset.i,d=+e.dataset.d;
+    const vis=EDIT_ITEMS.map((it,k)=>k).filter(k=>MST.day==null||editQty(EDIT_ITEMS[k])>0);
+    const p=vis.indexOf(i),q=p+d;
+    if(p<0||q<0||q>=vis.length)return;
+    const a=vis[p],b=vis[q];
+    [EDIT_ITEMS[a],EDIT_ITEMS[b]]=[EDIT_ITEMS[b],EDIT_ITEMS[a]];
+    itemRows();
+  },
   /* 요일을 골라놨으면 '이 요일만 0' 으로. 다른 요일에도 없으면 아예 뺀다 */
   idel(e){
     const i=+e.dataset.i,it=EDIT_ITEMS[i];
@@ -1624,11 +1641,12 @@ function parseBulk(txt){
     const toks=String(text||'').trim().split(/\s+/).filter(Boolean);
     const list=[];let buf=[];
     const push=(n,q)=>{n=n.replace(/^[.,·]+|[.,·]+$/g,'').trim();if(n)list.push({name:n,qty:q})};
-    for(const tk of toks){
+    toks.forEach((tk,i)=>{
       const m=tk.match(/^(\d+)\s*(개|팩|병)?$/);
-      if(m&&buf.length&&(m[2]||+m[1]<=50)){push(buf.join(' '),+m[1]);buf=[]}
+      /* 맨 끝 낱말은 크기와 상관없이 수량 (60개 같은 큰 수량도 인식) */
+      if(m&&buf.length&&(m[2]||i===toks.length-1||+m[1]<=50)){push(buf.join(' '),+m[1]);buf=[]}
       else buf.push(tk);
-    }
+    });
     if(buf.length)push(buf.join(' '),1);      // 수량을 안 적었으면 1개
     return list;
   };
@@ -1884,7 +1902,8 @@ function autoAll(){
 document.addEventListener('click',ev=>{
   const el=ev.target.closest('[data-act]');
   if(!el)return;
-  if(el.tagName==='INPUT'&&el.type==='file')return;
+  /* 입력 요소는 클릭을 가로채면 안 된다 — select 는 목록이 안 열리고, input 은 포커스가 안 잡힘 */
+  if(el.tagName==='SELECT'||el.tagName==='TEXTAREA'||el.tagName==='INPUT')return;
   if(el.classList.contains('ov')&&ev.target!==el)return;
   const f=A[el.dataset.act];
   if(f){ev.preventDefault();f(el,ev)}
