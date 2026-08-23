@@ -273,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v38 · 2026-08-22';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v42 · 2026-08-24';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -547,7 +547,7 @@ function vToday(){
       body+=`<div class="lc ${fin?'done':''} ${cur?'cur':''}" id="L${L.line.id}">
         <button class="lch" data-act="ltog" data-id="${L.line.id}">
           <span class="num">${idx}</span>
-          <span class="grow"><span class="t">${esc(L.block.name)} ${esc(L.line.name)}</span>
+          <span class="grow"><span class="t">${esc(L.block.name===L.line.name?L.block.name:L.block.name+' '+L.line.name)}</span>
           ${L.line.memo?`<span class="s">📝 ${esc(L.line.memo)}</span>`:''}</span>
           <span class="cnt">${fin?'<span class="pill ok">완료 '+(open?'▲':'▼')+'</span>':L.done+'/'+L.total}</span>
         </button>`;
@@ -1636,7 +1636,7 @@ function parseBulk(txt){
   const bGet=(c,dg,dj)=>{
     const k=norm(dj||'')+'|'+dg;
     let b=c.blocks.find(x=>x.key===k);
-    if(!b){b={key:k,dong:dg,danji:dj||'',name:dg==='기타'?'기타':dg+'동',units:[]};c.blocks.push(b)}
+    if(!b){b={key:k,dong:dg,danji:dj||'',name:(dg==='기타'||dg==='단독')?dg:dg+'동',units:[]};c.blocks.push(b)}
     return b;
   };
   /* "연세무항750 1 연세무항170 3" → 품목 두 개로 나눈다.
@@ -1750,7 +1750,7 @@ function parseBulk(txt){
       head=(t.slice(0,an.index)+' '+an[1]).trim();
     }
 
-    let dong='',ho='',who='',note='',prod='',danji='';
+    let dong='',ho='',who='',note='',prod='',danji='',solo=false;
     const am=head.match(/(\d{1,4})\s*-\s*(\d{1,5})(?!\d)/);
     if(am){
       /* 형식 A : 주소에 "동-호수" 가 들어있음 */
@@ -1759,8 +1759,9 @@ function parseBulk(txt){
       let post=head.slice(am.index+am[0].length).trim();
       const pm=post.match(/[（(]([^)）]*)[)）]/);                      // 인라인 (비번)
       if(pm){note=pm[1].trim();post=(post.slice(0,pm.index)+' '+post.slice(pm.index+pm[0].length)).replace(/\s+/g,' ').trim()}
-      /* 이름: ".이름 님" → "이름 님" → 첫 낱말이 순수 한글 2~4자면 이름으로 */
-      const nm=post.match(/[.·]\s*([가-힣]{2,4})\s*(?:님)?(?=\s|$)/)||post.match(/([가-힣]{2,4})\s*님(?=\s|$)/);
+      /* 이름 찾기: "이름 님" 처럼 표시가 있으면 2~4자 허용,
+         표시가 없으면 정확히 3자일 때만 이름으로 본다 (무료얼음 같은 4자 품목과 헷갈리지 않게) */
+      const nm=post.match(/([가-힣]{2,4})\s*님(?=\s|$)/);
       if(nm){
         who=nm[1];
         const pre=post.slice(0,nm.index).replace(/[.·]\s*$/,'').trim();
@@ -1768,10 +1769,20 @@ function parseBulk(txt){
         post=post.slice(nm.index+nm[0].length).trim();
       }else{
         const tk=post.split(' ').filter(Boolean);
-        if(tk.length>=2&&/^[가-힣]{2,4}$/.test(tk[0])){who=tk[0];post=tk.slice(1).join(' ')}
+        if(tk.length>=2&&/^[가-힣]{3}$/.test(tk[0])){who=tk[0];post=tk.slice(1).join(" ")}
       }
       prod=post;
     }else{
+      /* 단독 건물 (동-호수가 없는 상가·카센터 등)
+         "로얄카센타 최성진 (비밀번호x) 지티소 3"
+         첫 낱말이 4글자 이상 장소 이름이고 그 다음이 사람 이름이면 단독으로 본다 */
+      let p0=head,n0='';
+      const pm0=p0.match(/[（(]([^)）]*)[)）]/);
+      if(pm0){n0=pm0[1].trim();p0=(p0.slice(0,pm0.index)+' '+p0.slice(pm0.index+pm0[0].length)).replace(/\s+/g,' ').trim()}
+      const tk0=p0.split(' ').filter(Boolean);
+      if(tk0.length>=3&&!/\d/.test(tk0[0])&&tk0[0].length>=4&&/^[가-힣]{3}$/.test(tk0[1])){
+        solo=true;danji=tk0[0];who=tk0[1];prod=tk0.slice(2).join(' ');note=n0;
+      }else{
       /* 형식 B : head = 호수 + 품명,  tail(비고) = 동-호수 이름 님 */
       const h=head.match(/^(\d{1,5})\s+(.*)$/);
       if(h){ho=h[1];prod=h[2].trim()}else prod=head;
@@ -1781,10 +1792,11 @@ function parseBulk(txt){
       if(wm)who=wm[1];
       const pm=tail.match(/[（(]([^)）]*)[)）]/);
       if(pm&&!/^\s*(?:VIP|vip)\s*$/.test(pm[1]))note=pm[1].trim();
+      }
     }
 
     /* 호수가 없으면 = 앞 세대에 품목 한 줄 더 붙는 경우 (예: 무료얼음) */
-    if(!ho){
+    if(!ho&&!solo){
       if(U){splitItems(prod).forEach(it=>addItem(U,it.name,it.qty,days));continue}
       out.warn.push(clip(t));continue;
     }
@@ -1793,12 +1805,15 @@ function parseBulk(txt){
     if(danji&&!explicit)C=cGet(danji);
     else if(!C)C=cGet(danji||('명단 '+(sheet||'1')));
     if(danji)curDanji=danji;
-    if(dong)B=bGet(C,dong,danji||curDanji);
+    if(solo)B=bGet(C,'단독','');
+    else if(dong)B=bGet(C,dong,danji||curDanji);
     else if(!B)B=bGet(C,'기타','');
 
-    U=B.units.find(x=>x.ho===ho);
-    if(!U){U={ho,name:ho+'호',who:'',code:'',memo:'',items:[]};B.units.push(U)}
-    if(who&&!U.who)U.who=who;
+    /* 단독 건물은 호수 대신 사람 이름으로 구분한다 */
+    const key=solo?('@'+(who||'단독')):ho;
+    U=B.units.find(x=>x.ho===key);
+    if(!U){U={ho:key,solo,name:solo?(who||'단독'):(ho+'호'),who:'',code:'',memo:'',items:[]};B.units.push(U)}
+    if(!solo&&who&&!U.who)U.who=who;
     if(note){
       const [c,mm]=splitCode(note);
       if(c&&!U.code)U.code=c;
@@ -1814,7 +1829,7 @@ function parseBulk(txt){
     const byDong={};
     c.blocks.forEach(b=>{(byDong[b.dong]=byDong[b.dong]||new Set()).add(b.danji||'')});
     c.blocks.forEach(b=>{
-      if(b.dong==='기타')return;
+      if(b.dong==='기타'||b.dong==='단독')return;
       b.name=(byDong[b.dong].size>1&&b.danji?b.danji+' ':'')+b.dong+'동';
     });
   }
@@ -1847,7 +1862,7 @@ function applyBulk(r){
       let B=S.blocks.find(x=>x.cid===C.id&&norm(x.name)===norm(b.name));
       if(!B){B={id:uid(),cid:C.id,name:b.name,sort:S.blocks.filter(x=>x.cid===C.id).length};S.blocks.push(B)}
       for(const u of b.units){
-        const ln=lineName(hoLine(u.ho));
+        const ln=u.solo?'단독':lineName(hoLine(u.ho));
         let L=S.lines.find(x=>x.bid===B.id&&x.name===ln);
         if(!L){L={id:uid(),bid:B.id,name:ln,code:'',memo:'',sort:S.lines.filter(x=>x.bid===B.id).length};S.lines.push(L)}
         /* 같은 동 안에 이미 있으면(다른 라인에 옮겨놨더라도) 그 세대를 다시 씀 */
