@@ -273,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v43 · 2026-08-24';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v44 · 2026-09-02';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -887,7 +887,9 @@ function vSet(){
   </div>
   <div class="card pad">
     <div class="b">기록 정리</div>
-    <button class="btn full mt" data-act="clrday">오늘 체크 기록 초기화</button>
+    <button class="btn full mt" data-act="clrday">✓ 오늘 체크 표시만 지우기</button>
+    <p class="tiny muted" style="margin-top:8px">배달 체크만 지웁니다. 오늘 조정한 것(수량 ±, 오늘 쉼, 오늘만 추가)은 그대로 남아요.
+      되돌리려면 그 집의 <b>조정</b> → <b>조정 되돌리기</b>.</p>
     <button class="btn dn full mt" data-act="wipe">전체 삭제</button>
   </div>
   <p class="tiny muted center mt2">밀크메이트 · <b>${VER}</b><br>데이터는 이 폰 안에만 저장됩니다</p>`;
@@ -1387,7 +1389,15 @@ const A={
     const d=+e.dataset.d,i=S.set.days.indexOf(d);
     i<0?S.set.days.push(d):S.set.days.splice(i,1);S.set.days.sort();save();render();
   },
-  clrday(){if(!confirm(DATE+' 체크·조정 기록을 지울까요?'))return;delete S.daily[DATE];save();render();toast('초기화했어요')},
+  clrday(){
+    /* 체크 표시만 지운다. 조정(수량 ±, 오늘 쉼, 오늘만 추가)은 그대로 둔다 —
+       조정은 집집마다 '조정 되돌리기'로 따로 되돌릴 수 있기 때문 */
+    const d=S.daily[DATE];
+    if(!d||!Object.keys(d.done||{}).length){toast('지울 체크가 없어요');return}
+    if(!confirm(DATE+' 배달 체크 표시를 지울까요?\n(조정한 내용은 그대로 남아요)'))return;
+    d.done={};save();render();toast('체크만 지웠어요');
+  },
+
   wipe(){
     if(!confirm('명단·품목·사진 전부 삭제됩니다. 정말요?'))return;
     if(!confirm('되돌릴 수 없어요. 진짜 삭제할까요?'))return;

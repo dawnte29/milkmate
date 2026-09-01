@@ -1,7 +1,7 @@
 ﻿/* 우유 배달 앱 - 오프라인 캐시
    앱 파일을 통째로 캐시해서 인터넷 없이도 열리게 합니다.
    내용을 고쳤으면 아래 CACHE 이름의 숫자를 올리세요. (예: v1 -> v2) */
-const CACHE = 'milk-v43';
+const CACHE = 'milk-v44';
 const FILES = [
   './',
   './index.html',
