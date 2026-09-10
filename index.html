@@ -273,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v44 · 2026-09-02';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v45 · 2026-09-10';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -541,7 +541,9 @@ function vToday(){
     body+=`<div class="chead"><span class="n">📍 ${esc(c.course.name)}</span><span class="c">${cd}/${ct} 세대</span></div>`;
     for(const L of c.lines){
       idx++;
-      const fin=L.total>0&&L.done>=L.total;
+      /* 집이 전부 '오늘 쉼'이면(0/0) 갈 일이 없으니 끝난 라인으로 친다.
+         예전엔 0/0을 미완료로 봐서 '배달할 곳'이 계속 이 라인으로 되돌아갔음 */
+      const rest=L.total===0,fin=L.done>=L.total;
       const cur=!fin&&firstOpen;if(cur)firstOpen=false;
       const open=!fin||OPEN.has(L.line.id);
       body+=`<div class="lc ${fin?'done':''} ${cur?'cur':''}" id="L${L.line.id}">
@@ -549,7 +551,7 @@ function vToday(){
           <span class="num">${idx}</span>
           <span class="grow"><span class="t">${esc(L.block.name===L.line.name?L.block.name:L.block.name+' '+L.line.name)}</span>
           ${L.line.memo?`<span class="s">📝 ${esc(L.line.memo)}</span>`:''}</span>
-          <span class="cnt">${fin?'<span class="pill ok">완료 '+(open?'▲':'▼')+'</span>':L.done+'/'+L.total}</span>
+          <span class="cnt">${fin?(rest?'<span class="pill dn">오늘 쉼 ':'<span class="pill ok">완료 ')+(open?'▲':'▼')+'</span>':L.done+'/'+L.total}</span>
         </button>`;
       if(open){
         if(L.line.code)body+=`<button class="code" data-act="bigcode" data-id="${L.line.id}">
