@@ -273,7 +273,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v45 · 2026-09-10';        // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용
+const VER='v1.0 · 2026-09-16';       // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용. 고칠 때마다 0.1씩 (v1.0 → v1.1)
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -509,6 +509,14 @@ function render(){
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW));
   const old=document.querySelector('.fab');if(old)old.remove();
   if(r.fab){const f=document.createElement('button');f.className='fab';f.innerHTML=r.fab.h;f.dataset.act=r.fab.a;document.body.appendChild(f)}
+}
+
+/* 지금 배달해야 할 라인(첫 미완료)으로 데려다준다. 위든 아래든 한 번에 복귀.
+   다 끝났거나 오늘 배달이 없으면 맨 위 */
+function gotoCur(smooth){
+  const el=document.querySelector('.lc.cur')||document.querySelector('.lc:not(.done)');
+  if(el)el.scrollIntoView({behavior:smooth?'smooth':'auto',block:'center'});
+  else window.scrollTo(0,0);
 }
 
 /* ---------- 공통 헤더 ---------- */
@@ -974,7 +982,10 @@ function itemRows(){
 
 /* ================= 액션 ================= */
 const A={
-  tab(e){VIEW=e.dataset.v;if(VIEW==='manage')MST={cid:null,bid:null,lid:null,day:MST.day};if(VIEW!=='prod')PQ='';render();window.scrollTo(0,0)},
+  tab(e){
+    VIEW=e.dataset.v;if(VIEW==='manage')MST={cid:null,bid:null,lid:null,day:MST.day};if(VIEW!=='prod')PQ='';render();
+    VIEW==='today'?gotoCur():window.scrollTo(0,0);   // 오늘 배달은 맨 위가 아니라 지금 배달할 라인으로
+  },
   close(){closeM()},
 
   /* --- 날짜 --- */
@@ -993,11 +1004,7 @@ const A={
     O.has(id)?O.delete(id):O.add(id);render();
     const el=document.getElementById('L'+id);if(el)el.scrollIntoView({block:'nearest'});
   },
-  /* 지금 배달해야 할 라인(첫 미완료)으로 데려다준다. 위든 아래든 한 번에 복귀 */
-  next(){
-    const el=document.querySelector('.lc.cur')||document.querySelector('.lc:not(.done)');
-    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
-  },
+  next(){gotoCur(true)},
   bigcode(e){
     const isU=e.dataset.t==='u';
     const o=isU?(S.units.find(x=>x.id===e.dataset.id)||day().extra.find(x=>x.id===e.dataset.id)):F(e.dataset.id,S.lines);
@@ -1980,9 +1987,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
         <button class="btn dn full mt" data-act="wipe">전체 삭제 후 다시 시작</button></div>`;
     }
   };
-  draw();                                  // ① 먼저 오늘 배달 화면부터 띄우고
+  draw();gotoCur();                        // ① 먼저 오늘 배달 화면부터 띄우고 (지금 배달할 라인 위치로)
   try{await loadPics()}catch(e){}          // ② 사진은 뒤따라 읽어서
-  draw();                                  // ③ 사진 붙여 다시 그림
+  draw();gotoCur();                        // ③ 사진 붙여 다시 그림
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
