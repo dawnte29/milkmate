@@ -274,7 +274,10 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v1.1 · 2026-09-22';       // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용. 고칠 때마다 0.1씩 (v1.0 → v1.1)
+/* 설정 맨 아래에 표시. 폰이 새 버전인지 확인용.
+   고칠 때마다 0.1씩 (v1.1 → v1.2). 같은 날 두 번째부터는 숫자 대신 알파벳 (v1.2 → v1.2a → v1.2b).
+   날짜는 올리는 날 기준. sw.js 의 CACHE 도 똑같이 맞출 것 */
+const VER='v1.1a · 2026-09-22';
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -2010,6 +2013,17 @@ document.addEventListener('input',ev=>{
   const f=A[el.dataset.oninput];if(f)f(el,ev);
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+
+/* 확대 잠금.
+   meta viewport 의 user-scalable=no 만으로는 부족하다 — 두 손가락 터치를 직접 막는다.
+   (빠르게 두 번 누르는 건 막지 않는다. 수량 ＋ 를 연타할 때 눌림이 씹히면 안 되니까) */
+(function(){
+  const pinch=e=>{if(e.touches&&e.touches.length>1)e.preventDefault()};
+  document.addEventListener('touchstart',pinch,{passive:false});
+  document.addEventListener('touchmove',pinch,{passive:false});
+  ['gesturestart','gesturechange','gestureend'].forEach(t=>     // 사파리용
+    document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+})();
 
 /* 부팅
    화면을 먼저 그린 뒤 사진을 읽는다. 사진 읽기가 어디선가 멈춰도 앱은 정상적으로 뜬다. */
