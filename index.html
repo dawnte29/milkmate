@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0f14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -21,7 +21,8 @@
   --tx:#0f1720; --mu:#5b6d84; --ac:#0b72e7;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{margin:0;padding:0;height:100%}
+/* touch-action:manipulation = 두 번 탭해도 확대 안 됨 (장갑 끼고 눌러도 화면이 안 틀어지게) */
+html{margin:0;padding:0;height:100%;touch-action:manipulation}
 /* body 에 height:100% 를 주면 sticky 헤더가 화면 한 개 높이까지만 붙어 있다가 밀려난다 */
 body{margin:0;padding:0;min-height:100%}
 body{
@@ -273,7 +274,7 @@ code.k{background:var(--sf3);padding:1px 6px;border-radius:5px;font-size:13px}
    구조: 코스(동네) > 동 > 라인(공동현관 단위) > 세대(호수)
    ========================================================= */
 const KEY='milk_v1';
-const VER='v1.0 · 2026-09-16';       // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용. 고칠 때마다 0.1씩 (v1.0 → v1.1)
+const VER='v1.1 · 2026-09-22';       // 설정 맨 아래에 표시. 폰이 새 버전인지 확인용. 고칠 때마다 0.1씩 (v1.0 → v1.1)
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -440,6 +441,7 @@ const blocksOf=c=>S.blocks.filter(b=>b.cid===c).sort(byS);
 const linesOf=b=>S.lines.filter(l=>l.bid===b).sort(byS);
 const unitsOf=l=>S.units.filter(u=>u.lid===l).sort(byS);
 const P=id=>S.products.find(p=>p.id===id);
+const cicon=c=>(c&&c.icon)||'📍';                 // 코스(동네) 아이콘. 안 정했으면 핀
 const pname=id=>{const p=P(id);return p?p.name:'?'};
 const F=(id,arr)=>arr.find(x=>x.id===id);
 
@@ -542,11 +544,13 @@ function vToday(){
   if(!S.courses.length) return {top,body:onboard()};
   if(!pl.length) return {top,body:`<div class="card"><div class="empty">${DOW[dt.getDay()]}요일에 배달할 세대가 없어요.<br><span class="small">기본 배달 요일은 <b>설정</b>에서 바꿀 수 있어요.</span></div></div>`};
 
-  let firstOpen=true,idx=0,body='';
+  let firstOpen=true,idx=0;
+  /* '오늘만 추가'는 라인마다 두지 않고 여기 하나만 둔다 (라인마다 있으면 화면만 잡아먹음) */
+  let body=`<button class="btn full" data-act="uadd" style="margin-bottom:10px">＋ 오늘만 배달할 집 추가</button>`;
   const OPEN=window.__open||(window.__open=new Set());
   for(const c of pl){
     const ct=c.lines.reduce((a,l)=>a+l.total,0),cd=c.lines.reduce((a,l)=>a+l.done,0);
-    body+=`<div class="chead"><span class="n">📍 ${esc(c.course.name)}</span><span class="c">${cd}/${ct} 세대</span></div>`;
+    body+=`<div class="chead"><span class="n">${esc(cicon(c.course))} ${esc(c.course.name)}</span><span class="c">${cd}/${ct} 세대</span></div>`;
     for(const L of c.lines){
       idx++;
       /* 집이 전부 '오늘 쉼'이면(0/0) 갈 일이 없으니 끝난 라인으로 친다.
@@ -566,9 +570,8 @@ function vToday(){
           <span class="k">공동현관</span><span class="v">${esc(L.line.code)}</span><span class="z">탭 → 확대</span></button>`;
         for(const u of L.units)body+=uRow(u,d,L.line.id);
         /* 한 라인에 배달할 집이 2곳 이상일 때만 일괄 완료 버튼을 보여준다 */
-        if(L.total>L.done)body+=`<div class="pad" style="border-top:1px solid var(--bd);display:flex;gap:8px">
-          ${L.total>1?`<button class="btn ok grow" data-act="ldone" data-id="${L.line.id}">라인 배달 완료</button>`:''}
-          <button class="btn sm ${L.total>1?'':'grow'}" data-act="uadd" data-lid="${L.line.id}">＋오늘만 추가</button></div>`;
+        if(L.total>L.done&&L.total>1)body+=`<div class="pad" style="border-top:1px solid var(--bd)">
+          <button class="btn ok full" data-act="ldone" data-id="${L.line.id}">라인 배달 완료</button></div>`;
       }
       body+='</div>';
     }
@@ -580,7 +583,7 @@ function uRow(u,d,lid){
   const on=!!d.done[u.id],sk=!!d.skip[u.id];
   const its=eff(u,d);
   return `<div class="u ${on?'on':''} ${sk?'skip':''}">
-    <button class="uck" data-act="utog" data-id="${u.id}" ${sk?'disabled':''}>✓</button>
+    <button class="uck" data-act="utog" data-id="${u.id}" data-lid="${lid}" ${sk?'disabled':''}>✓</button>
     <div class="grow">
       <div class="row wrap">
         <span class="uno">${esc(u.name)}</span>
@@ -621,7 +624,7 @@ function vLoad(){
       const fin=!!d.done[u.id];
       for(const i of eff(u,d)){add(m,i.pid,i.qty,fin);add(tot,i.pid,i.qty,fin)}
     }
-    if(m.size)per.push({name:c.course.name,m});
+    if(m.size)per.push({name:c.course.name,icon:cicon(c.course),m});
   }
   const sum=m=>[...m.values()].reduce((a,b)=>[a[0]+b[0],a[1]+b[1]],[0,0]);
   const [grand,gdone]=sum(tot);
@@ -651,7 +654,7 @@ function vLoad(){
     <span class="right pill ${gdone>=grand?'ok':''}">${gdone?(grand-gdone)+' / ':''}${grand}개</span></div>${rows(tot)}</div>`;
   if(per.length>1)per.forEach(c=>{
     const [s,sd]=sum(c.m);
-    body+=`<div class="chead"><span class="n">📍 ${esc(c.name)}</span>
+    body+=`<div class="chead"><span class="n">${esc(c.icon)} ${esc(c.name)}</span>
       <span class="c">${sd?`남은 ${s-sd} / `:''}${s}개</span></div><div class="card">${rows(c.m)}</div>`;
   });
   body+=`<p class="tiny muted center mt2">품목을 누르면 사진이 나와요${gdone?' · 다 배달한 품목은 아래로 내려갑니다':''}</p>`;
@@ -695,7 +698,7 @@ function vManage(){
     body+=hiddenNote(courses(),cs)+(cs.length?`<div class="card">${cs.map((x,i)=>{
       const nb=blocksOf(x.id).length,nu=S.blocks.filter(bb=>bb.cid===x.id).reduce((a,bb)=>a+S.lines.filter(ll=>ll.bid===bb.id).reduce((s,ll)=>s+mf(unitsOf(ll.id)).length,0),0);
       return `<div class="li"><div class="ord">${ordBtns('c',x.id,i,cs.length)}</div>
-        <button class="grow" style="text-align:left" data-act="mgo" data-c="${x.id}"><div class="t">📍 ${esc(x.name)}</div><div class="s">동 ${nb}개 · 세대 ${nu}곳</div></button>
+        <button class="grow" style="text-align:left" data-act="mgo" data-c="${x.id}"><div class="t">${esc(cicon(x))} ${esc(x.name)}</div><div class="s">동 ${nb}개 · 세대 ${nu}곳</div></button>
         <button class="btn xs" data-act="ced" data-id="${x.id}">수정</button></div>`}).join('')}</div>`
       :`<div class="card"><div class="empty">배달하는 동네(코스)를 먼저 추가해요.<br><span class="small">예: 행복마을, 그린빌</span></div></div>`);
     body+=`<button class="btn pri full" data-act="ced">＋ 코스(동네) 추가</button>`;
@@ -993,10 +996,22 @@ const A={
   dtoday(){DATE=dkey(new Date());render()},
 
   /* --- 오늘 배달 --- */
-  utog(e){const d=day(),id=e.dataset.id;d.done[id]?delete d.done[id]:d.done[id]=1;save();render()},
+  /* 라인 머리를 한 번이라도 눌렀으면 '펼침'으로 기억돼서, 다 체크해도 안 접혔다.
+     마지막 집을 체크하는 순간 그 기억을 지운다 */
+  shut(lid){const O=window.__open;if(O&&lid)O.delete(lid)},
+  utog(e){
+    const d=day(),id=e.dataset.id,lid=e.dataset.lid;
+    d.done[id]?delete d.done[id]:d.done[id]=1;
+    if(d.done[id]&&lid){
+      const L=plan().flatMap(c=>c.lines).find(x=>x.line.id===lid);
+      if(L&&L.total>0&&L.done>=L.total)A.shut(lid);
+    }
+    save();render();
+  },
   ldone(e){
     const d=day(),l=e.dataset.id,pl=plan();
     pl.forEach(c=>c.lines.forEach(L=>{if(L.line.id===l)L.units.forEach(u=>{if(!d.skip[u.id])d.done[u.id]=1})}));
+    A.shut(l);
     save();render();toast('라인 완료!');
   },
   ltog(e){
@@ -1110,20 +1125,36 @@ const A={
     delete d.done[id];delete d.skip[id];delete d.adj[id];
     save();closeM();render();toast('삭제했어요');
   },
-  uadd(e){
-    const lid=e.dataset.lid;
+  /* 어느 동인지만 고르면 라인은 호수 끝 두 자리로 알아서 정해진다.
+     예전엔 누른 라인에 무조건 붙어서, 다른 동 호수를 넣어도 그 자리에 남아 있었다 */
+  uadd(){
+    const cur=document.querySelector('.lc.cur');
+    const curL=cur?F(cur.id.slice(1),S.lines):null;
+    const curBid=curL?curL.bid:'';
+    const opts=courses().map(c=>{
+      const bs=blocksOf(c.id);if(!bs.length)return '';
+      return `<optgroup label="${esc(cicon(c))} ${esc(c.name)}">${bs.map(b=>
+        `<option value="${b.id}"${b.id===curBid?' selected':''}>${esc(b.name)}</option>`).join('')}</optgroup>`;
+    }).join('');
+    if(!opts)return toast('먼저 명단에 아파트와 동을 넣어주세요');
     sheet(`<h3 class="sh">오늘만 배달할 집 추가</h3>
       <p class="tiny muted" style="margin:-8px 0 12px">고정 명단에는 안 들어가고 <b>${DATE}</b>에만 나와요.
       나중에 <b>조정</b>에서 지울 수 있어요.</p>
-      <div class="lb">호수</div><input id="tn" placeholder="예: 1203" inputmode="numeric">
-      <div class="lb">받는 분 (선택)</div><input id="tw" placeholder="예: 김미영">
-      <div class="lb">🔑 현관 비밀번호 (선택)</div><input id="tc" placeholder="예: #1203 5678">
-      <button class="btn pri full mt2" data-act="uadd2" data-lid="${lid}">추가하고 품목 고르기 →</button>`);
+      <div class="lb">아파트 · 동</div><select id="tb">${opts}</select>
+      <div class="lb mt2">호수</div><input id="tn" placeholder="예: 1203" inputmode="numeric">
+      <p class="tiny muted mt">호수 끝 두 자리로 <b style="color:var(--ac)">라인이 알아서</b> 정해져요. (1203호 → 3-4라인)</p>
+      <div class="lb mt2">받는 분 (선택)</div><input id="tw" placeholder="예: 김미영">
+      <div class="lb mt2">🔑 현관 비밀번호 (선택)</div><input id="tc" placeholder="예: #1203 5678">
+      <button class="btn pri full mt2" data-act="uadd2">추가하고 품목 고르기 →</button>`);
   },
-  uadd2(e){
+  uadd2(){
     const n=val('tn');if(!n)return toast('호수를 입력해주세요');
+    const bid=val('tb');if(!bid)return toast('동을 골라주세요');
+    const ln=lineName(hoLine(n));
+    let L=S.lines.find(x=>x.bid===bid&&x.name===ln);
+    if(!L){L={id:uid(),bid,name:ln,code:'',memo:'',sort:S.lines.filter(x=>x.bid===bid).length};S.lines.push(L)}
     const d=day(),id=uid();
-    d.extra.push({id,lid:e.dataset.lid,name:/[가-힣a-zA-Z]$/.test(n)?n:n+'호',
+    d.extra.push({id,lid:L.id,name:/[가-힣a-zA-Z]$/.test(n)?n:n+'호',
       who:val('tw'),code:val('tc'),memo:'',items:[],sort:9999});
     save();render();
     A.apick({dataset:{u:id}});                  // 바로 품목 고르기로 이어짐
@@ -1153,14 +1184,19 @@ const A={
   ced(e){
     const x=e.dataset.id?F(e.dataset.id,S.courses):null;
     sheet(`<h3 class="sh">${x?'코스 수정':'코스(동네) 추가'}</h3>
-      <div class="lb">이름</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 행복마을 / 그린빌 3단지">
+      <div class="lb">아이콘</div>
+      <input id="f0" value="${esc(x?cicon(x):'📍')}" maxlength="4" style="font-size:22px;text-align:center;max-width:96px">
+      <p class="tiny muted mt">키보드의 이모지로 원하는 걸 넣으세요. 비우면 📍 로 돌아갑니다.</p>
+      <div class="lb mt2">이름</div><input id="f1" value="${x?esc(x.name):''}" placeholder="예: 행복마을 / 그린빌 3단지">
       <button class="btn pri full mt2" data-act="ced2" data-id="${x?x.id:''}">저장</button>
       ${x?`<button class="btn dn full mt" data-act="del" data-t="c" data-id="${x.id}">${delLabel("c",x.id)}</button>`:''}`);
   },
   ced2(e){
     const n=val('f1');if(!n)return toast('이름을 입력해주세요');
+    const ic=val('f0')||'📍';
     const id=e.dataset.id;
-    if(id)F(id,S.courses).name=n;else S.courses.push({id:uid(),name:n,sort:S.courses.length});
+    if(id){const c=F(id,S.courses);c.name=n;c.icon=ic}
+    else S.courses.push({id:uid(),name:n,icon:ic,sort:S.courses.length});
     save();closeM();render();
   },
   bed(e){
