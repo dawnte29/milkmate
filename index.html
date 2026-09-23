@@ -277,7 +277,7 @@ const KEY='milk_v1';
 /* 설정 맨 아래에 표시. 폰이 새 버전인지 확인용.
    고칠 때마다 0.1씩 (v1.1 → v1.2). 같은 날 두 번째부터는 숫자 대신 알파벳 (v1.2 → v1.2a → v1.2b).
    날짜는 올리는 날 기준. sw.js 의 CACHE 도 똑같이 맞출 것 */
-const VER='v1.1a · 2026-09-22';
+const VER='v1.2 · 2026-09-23';
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -475,6 +475,24 @@ function eff(u,d=day(),w=dow()){
   return [...m].filter(([,q])=>q>0).map(([pid,qty])=>({pid,qty,adj:!!(a[pid])}));
 }
 
+/* 호수에서 숫자만 (1302호 -> 1302). 층순 비교에 쓴다 */
+const flNo=u=>{const m=String(u&&u.name).match(/\d+/);return m?+m[0]:0};
+/* 오늘만 추가한 집을 고정 세대들 사이 제자리에 끼워 넣는다.
+   고정 세대의 순서(▲▼로 잡아둔 동선)는 그대로 두고, 새 집 자리만 '세대 정렬 순서' 설정대로 층수로 찾는다.
+   그릴 때마다 계산하므로 설정을 바꾸면 바로 따라간다 */
+function mergeTemp(us,ex){
+  if(!ex.length)return us;
+  const dir=S.set.floorDesc?-1:1;          // 높은 층부터면 -1
+  const out=us.slice();
+  ex.slice().sort((a,b)=>dir*(flNo(a)-flNo(b))).forEach(e=>{
+    /* 나보다 먼저 도는 집들 중 가장 마지막 집 바로 뒤에 넣는다.
+       (손으로 순서를 뒤섞어둔 라인이어도 엉뚱한 데로 안 가게) */
+    let i=out.length;while(i>0&&dir*(flNo(out[i-1])-flNo(e))>0)i--;
+    out.splice(i,0,e);
+  });
+  return out;
+}
+
 /* 오늘의 전체 배달 트리 */
 function plan(){
   const d=day(),w=dow(),out=[];
@@ -484,7 +502,7 @@ function plan(){
     for(const b of blocksOf(c.id))for(const l of linesOf(b.id)){
       let us=unitsOf(l.id).filter(u=>onDay(u,w));
       const ex=d.extra.filter(e=>e.lid===l.id).map(e=>({...e,temp:true}));
-      us=us.concat(ex);
+      us=mergeTemp(us,ex);      // 오늘만 추가한 집도 제자리에 (예전엔 무조건 라인 맨 끝)
       if(!us.length)continue;
       const live=us.filter(u=>!d.skip[u.id]);
       cl.push({line:l,block:b,units:us,total:live.length,done:live.filter(u=>d.done[u.id]).length});

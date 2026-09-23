@@ -3,7 +3,7 @@
    내용을 고쳤으면 아래 CACHE 이름을 올리세요.
    보통은 0.1씩 (v1.1 -> v1.2), 같은 날 두 번째부터는 알파벳 (v1.2 -> v1.2a).
    index.html 맨 위의 VER 과 항상 똑같이 맞추세요. */
-const CACHE = 'milk-v1.1a';
+const CACHE = 'milk-v1.2';
 const FILES = [
   './',
   './index.html',
