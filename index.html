@@ -114,9 +114,10 @@ textarea{resize:vertical;line-height:1.5}
 /* ---------- today: line card ---------- */
 /* 오늘만 추가 - 동 고르기 */
 .bpick{position:relative;max-height:200px;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:8px;
-  display:flex;flex-wrap:wrap;gap:6px;background:var(--sf2)}
-.bpg{width:100%;font-size:12px;color:var(--mu);font-weight:700;margin:4px 2px 0}
-.bp{padding:10px 14px;border-radius:10px;background:var(--sf3);border:1px solid var(--bd);font-weight:700;font-size:15px}
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;background:var(--sf2)}
+.bpg{grid-column:1/-1;font-size:12px;color:var(--mu);font-weight:700;margin:4px 2px 0}
+.bp{height:46px;padding:0 8px;border-radius:10px;background:var(--sf3);border:1px solid var(--bd);font-weight:700;font-size:15px;
+  text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bp.on{background:var(--ac);border-color:var(--ac);color:#fff}
 .lc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
 .lc.done{opacity:.5}
@@ -283,7 +284,7 @@ const KEY='milk_v1';
 /* 설정 맨 아래에 표시. 폰이 새 버전인지 확인용.
    고칠 때마다 0.1씩 (v1.1 → v1.2). 같은 날 두 번째부터는 숫자 대신 알파벳 (v1.2 → v1.2a → v1.2b).
    날짜는 올리는 날 기준. sw.js 의 CACHE 도 똑같이 맞출 것 */
-const VER='v1.3a · 2026-10-02';
+const VER='v1.3b · 2026-10-02';
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -1189,7 +1190,10 @@ const A={
        그래서 앱 안의 버튼 목록으로 고르게 한다 */
     let first='';
     const opts=courses().map(c=>{
-      const bs=blocksOf(c.id);if(!bs.length)return '';
+      /* 고르기 쉽게 동 번호 오름차순. 배달 순서(동선)와는 별개다 */
+      const no=b=>{const m=String(b.name).match(/\d+/);return m?+m[0]:9999};
+      const bs=blocksOf(c.id).slice().sort((x,y)=>no(x)-no(y)||x.name.localeCompare(y.name));
+      if(!bs.length)return '';
       if(!first)first=bs[0].id;
       return `<div class="bpg">${esc(cicon(c))} ${esc(c.name)}</div>`+bs.map(b=>
         `<button class="bp" data-act="bpick" data-b="${b.id}">${esc(b.name)}</button>`).join('');
