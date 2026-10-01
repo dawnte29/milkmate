@@ -113,7 +113,7 @@ textarea{resize:vertical;line-height:1.5}
 
 /* ---------- today: line card ---------- */
 /* 오늘만 추가 - 동 고르기 */
-.bpick{max-height:200px;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:8px;
+.bpick{position:relative;max-height:200px;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:8px;
   display:flex;flex-wrap:wrap;gap:6px;background:var(--sf2)}
 .bpg{width:100%;font-size:12px;color:var(--mu);font-weight:700;margin:4px 2px 0}
 .bp{padding:10px 14px;border-radius:10px;background:var(--sf3);border:1px solid var(--bd);font-weight:700;font-size:15px}
@@ -283,7 +283,7 @@ const KEY='milk_v1';
 /* 설정 맨 아래에 표시. 폰이 새 버전인지 확인용.
    고칠 때마다 0.1씩 (v1.1 → v1.2). 같은 날 두 번째부터는 숫자 대신 알파벳 (v1.2 → v1.2a → v1.2b).
    날짜는 올리는 날 기준. sw.js 의 CACHE 도 똑같이 맞출 것 */
-const VER='v1.3 · 2026-10-02';
+const VER='v1.3a · 2026-10-02';
 const DOW=['일','월','화','수','목','금','토'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
@@ -481,14 +481,15 @@ function eff(u,d=day(),w=dow()){
   return [...m].filter(([,q])=>q>0).map(([pid,qty])=>({pid,qty,adj:!!(a[pid])}));
 }
 
-/* 오늘만 추가 시트에서 고른 동에 표시를 하고, 목록 안에서 그 자리로만 스크롤한다 */
-function markBlock(bid){
+/* 오늘만 추가 시트에서 고른 동에 표시를 한다.
+   스크롤은 창을 처음 열 때만 (누를 때마다 맞추면 목록이 손가락 밑에서 튄다) */
+function markBlock(bid,scroll){
   const box=document.getElementById('bpick'),f=document.getElementById('tb');
   if(!box||!f)return;
   f.value=bid;
   box.querySelectorAll('.bp').forEach(b=>b.classList.toggle('on',b.dataset.b===bid));
   const on=box.querySelector('.bp.on');
-  if(on)box.scrollTop=Math.max(0,on.offsetTop-box.clientHeight/2);
+  if(scroll&&on)box.scrollTop=Math.max(0,on.offsetTop-(box.clientHeight-on.offsetHeight)/2);
 }
 
 /* '오늘만 조정' 시트의 품목 줄들.
@@ -1206,7 +1207,7 @@ const A={
       <div class="lb mt2">받는 분 (선택)</div><input id="tw" placeholder="예: 김미영">
       <div class="lb mt2">🔑 현관 비밀번호 (선택)</div><input id="tc" placeholder="예: #1203 5678">
       <button class="btn pri full mt2" data-act="uadd2">추가하고 품목 고르기 →</button>`);
-    markBlock(sel);
+    markBlock(sel,true);          // 처음 열 때만 고른 동이 보이게 맞춘다
   },
   bpick(e){markBlock(e.dataset.b)},        // 목록 안에서만 표시를 바꾼다 (화면을 다시 그리지 않음)
   uadd2(){

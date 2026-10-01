@@ -26,7 +26,7 @@
 ### 앱을 고쳤을 때 (업데이트)
 
 1. GitHub 저장소 → **Add file → Upload files** → 바뀐 파일 드래그 → **Commit changes**
-2. `sw.js` 맨 위 `milk-v1.3` 을 올려야 폰에 새 버전이 반영됩니다. `index.html` 의 `VER` 도 **똑같이**
+2. `sw.js` 맨 위 `milk-v1.3a` 를 올려야 폰에 새 버전이 반영됩니다. `index.html` 의 `VER` 도 **똑같이**
    - 보통은 **0.1씩** — `v1.1` → `v1.2`
    - **같은 날 두 번째부터는 숫자를 두고 알파벳** — `v1.2` → `v1.2a` → `v1.2b`
    - 날짜는 **올리는 날**로 (`v1.2a · 2026-09-24`)
@@ -194,7 +194,7 @@
 |---|---|
 | `index.html` | 앱 전체 (화면·기능이 전부 이 안에) |
 | `manifest.webmanifest` | 홈 화면 아이콘·이름 |
-| `sw.js` | 오프라인 캐시. **고쳤으면 맨 위 `milk-v1.3` 을 올릴 것** (`index.html` 의 `VER` 과 동일하게) |
+| `sw.js` | 오프라인 캐시. **고쳤으면 맨 위 `milk-v1.3a` 를 올릴 것** (`index.html` 의 `VER` 과 동일하게) |
 | `icon-192.png` `icon-512.png` `icon-maskable.png` | 홈 화면 아이콘 |
 
 ## 9. PC에서 미리 확인하기
